@@ -249,7 +249,7 @@ plot(v.WL2020n, pl=T, model=m.WL2020n, main = "Variogram Model")
 (m.WL2020n.f <- fit.variogram(v.WL2020n, m.WL2020n))
 
 # export fig to png
-png(filename="faithful.png")
+png(filename="output/fitted_variogram.png")
 plot(v.WL2020n, pl=T, model=m.WL2020n.f, main = "Fitted OK Variogram Model 2020")
 dev.off()
 
