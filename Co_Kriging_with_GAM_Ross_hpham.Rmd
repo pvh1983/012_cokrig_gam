@@ -229,28 +229,32 @@ head(sim_wl2020.datasubset)
 
 ```{r}
 # look at the spatial point data frame
-data_spadf
-str(data_spadf)
+#data_spadf
+#str(data_spadf)
+cal_year <- "2020n"
 
 # plot the empirical variogram for measured water levels at specific years
 v_WL2020n <- variogram(WL2020n ~ 1 , data=data_spadf, cutoff=300000, width=20000)
-str(v_WL2020n)
-summary(v_WL2020n)
-v_WL2020n$np
-v_WL2020n$dist
+#str(v_WL2020n)
+#summary(v_WL2020n)
+#v_WL2020n$np
+#v_WL2020n$dist
 
-plot(v.WL2020n <- variogram(WL2020n ~ 1 , data=data_spadf, cutoff=300000, width=20000), main = "Empirical Variogram",pl = T)
+# Plot empirical variogram
+plot(v_WL2020n, main = "Empirical Variogram",pl = T)
 
 # create a model for the empirical variogram
-m.WL2020n <- vgm(0.05,"Gau",200000,0.003)
+variogram_model_WL2020n <- vgm(0.05,"Gau",200000,0.003)
 
 # plot both the fitted variogram model with the empirical variogram
-plot(v.WL2020n, pl=T, model=m.WL2020n, main = "Variogram Model")
-(m.WL2020n.f <- fit.variogram(v.WL2020n, m.WL2020n))
+#plot(v_WL2020n, pl=T, model=variogram_model_WL2020n, main = "Variogram Model")
+#(variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n))
+
+variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n)
 
 # export fig to png
 png(filename="output/fitted_variogram.png")
-plot(v.WL2020n, pl=T, model=m.WL2020n.f, main = "Fitted OK Variogram Model 2020")
+plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = "Fitted OK Variogram Model 2020")
 dev.off()
 
 # Save to a csv file
