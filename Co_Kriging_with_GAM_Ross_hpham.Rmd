@@ -46,14 +46,43 @@ library(lubridate)
 library(ggnewscale)                          #use multiple colour and fill scales in ggplot2
 library(gstat)
 library(taRifx)
+```
 
+
+```{r }
 ## Read in the water level .csv file
 path_waterlevel = ("input/data/water_levels")
-#water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
-water_level <- read.csv(paste(path_waterlevel,"/test_no_Jackson.csv",sep=''))
+water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
+#water_level <- read.csv(paste(path_waterlevel,"/test_no_Jackson.csv",sep=''))
 
-cal_year <- "Shallow.Below.1929.noJackson" # WL2018, WL2019, WL2010, Shallow.Combined.1929, Shallow.Below.1929, 
+
+thre_cutoff <- as.integer(200000)
+thre_width <- as.integer(15000)
+#cal_year <- "Shallow.Combined.1929.noJackson" # WL2018, WL2019, WL2010, Shallow.Combined.1929, Shallow.Below.1929, 
                     # Shallow.Combined.1929.noJackson, Shallow.Below.1929.noJackson,   
+#cal_year <- "WL2018"
+#cal_year <- "WL2019"
+#cal_year <- "WL2020"
+#cal_year <- "Shallow.Combined.1929"
+#cal_year <- "Shallow.Below.1929"
+
+cal_year <- "WL2018_minus_Shallow.Combined.1929"
+cal_year <- "WL2019_minus_Shallow.Combined.1929"
+cal_year <- "WL2020_minus_Shallow.Combined.1929"
+cal_year <- "WL2018_minus_Shallow.Below.1929"
+cal_year <- "WL2019_minus_Shallow.Below.1929"
+cal_year <- "WL2020_minus_Shallow.Below.1929"
+
+
+
+#list_cal_years <- list("WL2018","WL2019")
+
+
+#for ( cal_year in list_cal_years){ 
+# print(cal_year)
+ 
+
+
 
 
 ## read in the spatial polygons for each acquifer
@@ -88,8 +117,8 @@ cal_year <- "Shallow.Below.1929.noJackson" # WL2018, WL2019, WL2010, Shallow.Com
 #plot(pumping500_2020)
 
 # import the GAM (simulated water levels) 
-sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
-sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
+#sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
+#sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
 #plot(sim_WL2020)
 #plot(sim_WL2019)
 
@@ -142,20 +171,20 @@ library(pracma)
 # filter out NAs in both WL2019 and WL2020 to keep same number of measured water levels for both years
 data <- water_level %>%
   dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2,
-                ScrBot2, SH_Note, Aq2Use,WL2015,WL2018 ,WL2019,WL2020,  
-                WL2019Loc.DD.Adjt,WL2020Loc.DD.Adjt, 
-                Shallow.Combined.1929.noJackson, Shallow.Below.1929.noJackson)
-data$WL2015
+                ScrBot2, SH_Note, Aq2Use, cal_year)
+# Shallow.Combined.1929, Shallow.Below.1929
+#Shallow.Combined.1929.noJackson, Shallow.Below.1929.noJackson
+#data$WL2015
 
 
 #%>%   filter(cal_year != 0) 
 
-#head(data)
+str(data)
 
 # we can also only exclude NAs for individual years
-data_2019 <- data %>% 
-  dplyr::select(Longitude, Latitude, WL2019Loc.DD.Adjt) %>%
-  filter(WL2019Loc.DD.Adjt != 0)
+#data_2019 <- data %>% 
+#  dplyr::select(Longitude, Latitude, WL2019Loc.DD.Adjt) %>%
+#  filter(WL2019Loc.DD.Adjt != 0)
 #
 #data_2020 <- data %>% 
 #  dplyr::select(Longitude, Latitude, cal_year) %>%
@@ -171,31 +200,31 @@ data_2020 <- data %>%
   filter(data[,cal_year] != 0)
 
 #data_2020[,cal_year]
-data_2020$WL2015
+#data_2020$WL2015
 
 # create spatial point data frame with geographic coordinate systems
-data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
-crs(data_sp2019) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+#data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
+#crs(data_sp2019) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 data_sp2020 <- SpatialPointsDataFrame(SpatialPoints(data_2020[,1:2]), data.frame(data_2020[,3]))
 crs(data_sp2020) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 # create spatial point data frames with projected coordinate systems
 new_crs <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs ")
-data_sp2019 <- spTransform(data_sp2019,new_crs)
+#data_sp2019 <- spTransform(data_sp2019,new_crs)
 data_sp2020 <- spTransform(data_sp2020,new_crs)
 
 # rename the colnames
-colnames(data_sp2019@coords)[1:2] = c("x","y")
-colnames(data_sp2019@data)        = c("WL2019")  
+#colnames(data_sp2019@coords)[1:2] = c("x","y")
+#colnames(data_sp2019@data)        = c("WL2019")  
 colnames(data_sp2020@coords)[1:2] = c("x","y")
 colnames(data_sp2020@data)        = c("WL2020")  
 
 # create combined spatial point data frame for both years (2019 & 2020) with projected coordinate systems
-data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13])
-crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
-data_spadf <- spTransform(data_spadf,new_crs)
-data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
+#data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13])
+#crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+#data_spadf <- spTransform(data_spadf,new_crs)
+#data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
 
 
 #Normalized Data
@@ -208,40 +237,40 @@ data_sp2020@data$WL2020n <- normalized(data_sp2020@data$WL2020)
 
 
 ```
-# preprocessing the GAM (simulated water levels), and extract a subset spatialpointdataframe to variogram and co-krige with measured water levels
-```{r}
-# convert the selected GAM raster for either 2019 or 2020 to a spatial point data frame, specify the year of the data
-sim_wl.data <- rasterToPoints(sim_WL2020, spatial = TRUE, progress = "window") 
-str(sim_wl.data)
+<!-- # preprocessing the GAM (simulated water levels), and extract a subset spatialpointdataframe to variogram and co-krige with measured water levels -->
+<!-- ```{r} -->
+<!-- # convert the selected GAM raster for either 2019 or 2020 to a spatial point data frame, specify the year of the data -->
+<!-- sim_wl.data <- rasterToPoints(sim_WL2020, spatial = TRUE, progress = "window")  -->
+<!-- str(sim_wl.data) -->
 
-# rename the colname 
-colnames(sim_wl.data@data)[1] = "sim_wl"
-# normalized the data
-sim_wl.data@data$sim_wln <- normalized(sim_wl.data@data$sim_wl)
-sim_wl.data
-str(sim_wl.data)
+<!-- # rename the colname  -->
+<!-- colnames(sim_wl.data@data)[1] = "sim_wl" -->
+<!-- # normalized the data -->
+<!-- sim_wl.data@data$sim_wln <- normalized(sim_wl.data@data$sim_wl) -->
+<!-- sim_wl.data -->
+<!-- str(sim_wl.data) -->
 
-# convert the spatial point df to a regular dataframe
-sim_wl.dataframe <- as.data.frame(sim_wl.data)
-colnames(sim_wl.dataframe) <- c("sim_wl","sim_wln", "x", "y")
+<!-- # convert the spatial point df to a regular dataframe -->
+<!-- sim_wl.dataframe <- as.data.frame(sim_wl.data) -->
+<!-- colnames(sim_wl.dataframe) <- c("sim_wl","sim_wln", "x", "y") -->
 
-str(sim_wl.dataframe)
+<!-- str(sim_wl.dataframe) -->
 
-# subset 1 in every 500 data for variogram modeling 
-sim_wl.dataframesubset <- subset(sim_wl.dataframe[seq(1,nrow(sim_wl.dataframe), 500),])
-str(sim_wl.dataframesubset)
-head(sim_wl.dataframesubset)
+<!-- # subset 1 in every 500 data for variogram modeling  -->
+<!-- sim_wl.dataframesubset <- subset(sim_wl.dataframe[seq(1,nrow(sim_wl.dataframe), 500),]) -->
+<!-- str(sim_wl.dataframesubset) -->
+<!-- head(sim_wl.dataframesubset) -->
 
-# create a subset DEM spatialpointdataframe for variogram modeling 
-sim_wl2020.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
-#crs(sim_wl2020.datasubset) <- crs(data_spadf)
+<!-- # create a subset DEM spatialpointdataframe for variogram modeling  -->
+<!-- #sim_wl2020.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2])) -->
+<!-- #crs(sim_wl2020.datasubset) <- crs(data_spadf) -->
 
-sim_wl2019.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
-#crs(sim_wl2019.datasubset) <- crs(data_spadf)
+<!-- #sim_wl2019.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2])) -->
+<!-- #crs(sim_wl2019.datasubset) <- crs(data_spadf) -->
 
-#head(sim_wl2019.datasubset)
-#head(sim_wl2020.datasubset)
-```
+<!-- #head(sim_wl2019.datasubset) -->
+<!-- #head(sim_wl2020.datasubset) -->
+<!-- ``` -->
 
 # Modelling the spatial structure of the target variable - make variogram
 # 1. the variogram method computes the experimental variogram as a variogram object
@@ -255,7 +284,7 @@ sim_wl2019.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesu
 
 
 # plot the empirical variogram for measured water levels at specific years
-v_WL2020n <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=300000, width=20000)
+v_WL2020n <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=thre_cutoff, width=thre_width)
 #str(v_WL2020n)
 #summary(v_WL2020n)
 #v_WL2020n$np
@@ -265,7 +294,7 @@ v_WL2020n <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=300000, width=2000
 #plot(v_WL2020n, main = "Empirical Variogram",pl = T)
 
 # create a model for the empirical variogram
-variogram_model_WL2020n <- vgm(0.05,"Gau",200000,0.003)
+variogram_model_WL2020n <- vgm(0.05,"Gau",100000,0.003)
 str(variogram_model_WL2020n)
 summary(variogram_model_WL2020n)
 
@@ -278,15 +307,18 @@ str(variogram_model_WL2020n_fit)
 summary(variogram_model_WL2020n_fit)
 
 # export fig to png
-ofile = paste("output/fitted_variogram_",cal_year,".png")
-png(ofile)
-plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted OK Variogram Model ", cal_year))
+ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),".png")
+
+png(ofile,width=10,height=8,units="in",res=300)
+plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted OK Variogram Model ", cal_year,"_cutoff_",toString(thre_cutoff)))
 dev.off()
 
 # Save to a csv file
-ofile = paste("output/fitted_variogram_",cal_year,".csv")
+ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),".csv")
 write.csv(v_WL2020n,ofile)
 ```
+
+
 
 <!-- # Co-Kriging with GAM (simulated water levels) -->
 <!-- # Model the spatial structure of a covariate and its covariance with the target variable. This is called co-regionalisation.  -->
