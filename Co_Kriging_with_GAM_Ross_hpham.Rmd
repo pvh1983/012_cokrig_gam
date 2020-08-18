@@ -79,14 +79,14 @@ pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.
 
 pumping <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
 
-plot(pumping500_2018)
-plot(pumping500_2020)
+#plot(pumping500_2018)
+#plot(pumping500_2020)
 
 # import the GAM (simulated water levels) 
 sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
 sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
-plot(sim_WL2020)
-plot(sim_WL2019)
+#plot(sim_WL2020)
+#plot(sim_WL2019)
 
 
 #setwd("c:/Users/hpham/OneDrive - INTERA Inc/projects/012_rscript_geostats_s/scripts/")
@@ -231,7 +231,7 @@ head(sim_wl2020.datasubset)
 # look at the spatial point data frame
 #data_spadf
 #str(data_spadf)
-cal_year <- "2020n"
+cal_year <- "2020"
 
 # plot the empirical variogram for measured water levels at specific years
 v_WL2020n <- variogram(WL2020n ~ 1 , data=data_spadf, cutoff=300000, width=20000)
@@ -241,24 +241,30 @@ v_WL2020n <- variogram(WL2020n ~ 1 , data=data_spadf, cutoff=300000, width=20000
 #v_WL2020n$dist
 
 # Plot empirical variogram
-plot(v_WL2020n, main = "Empirical Variogram",pl = T)
+#plot(v_WL2020n, main = "Empirical Variogram",pl = T)
 
 # create a model for the empirical variogram
 variogram_model_WL2020n <- vgm(0.05,"Gau",200000,0.003)
+str(variogram_model_WL2020n)
+summary(variogram_model_WL2020n)
 
 # plot both the fitted variogram model with the empirical variogram
 #plot(v_WL2020n, pl=T, model=variogram_model_WL2020n, main = "Variogram Model")
 #(variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n))
 
 variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n)
+str(variogram_model_WL2020n_fit)
+summary(variogram_model_WL2020n_fit)
 
 # export fig to png
-png(filename="output/fitted_variogram.png")
-plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = "Fitted OK Variogram Model 2020")
+ofile = paste("output/fitted_variogram_",cal_year,".png")
+png(ofile)
+plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted OK Variogram Model ", cal_year))
 dev.off()
 
 # Save to a csv file
-write.csv(v_WL2020n,'v_WL2020n.csv')
+ofile = paste("output/fitted_variogram_",cal_year,".csv")
+write.csv(v_WL2020n,ofile)
 ```
 
 <!-- # Co-Kriging with GAM (simulated water levels) -->
