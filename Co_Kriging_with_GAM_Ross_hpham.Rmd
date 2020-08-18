@@ -49,35 +49,40 @@ library(taRifx)
 
 ## Read in the water level .csv file
 path_waterlevel = ("input/data/water_levels")
-water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
+#water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
+water_level <- read.csv(paste(path_waterlevel,"/test_no_Jackson.csv",sep=''))
+
+cal_year <- "Shallow.Below.1929.noJackson" # WL2018, WL2019, WL2010, Shallow.Combined.1929, Shallow.Below.1929, 
+                    # Shallow.Combined.1929.noJackson, Shallow.Below.1929.noJackson,   
+
 
 ## read in the spatial polygons for each acquifer
-path <- ("input/GIS/shapefiles/geology/District_Geology_Boundaries")
+#path <- ("input/GIS/shapefiles/geology/District_Geology_Boundaries")
 
-Yegua_Jackson <- readOGR(dsn = path, layer = "YJ_400_original")
-Sparta        <- readOGR(dsn = path, layer = "SP_400_original")
-Queen_City    <- readOGR(dsn = path, layer = "QC_400_original")
-Carrizo       <- readOGR(dsn = path, layer = "CZ_400_original")
-Calvert_Bluff <- readOGR(dsn = path, layer = "CB_400_original")
-Simboro       <- readOGR(dsn = path, layer = "SB_400_original")
-Hopper        <- readOGR(dsn = path, layer = "HP_400_original")
-ShallowZone   <- readOGR(dsn = path, layer = "Total_400_original")
+#Yegua_Jackson <- readOGR(dsn = path, layer = "YJ_400_original")
+#Sparta        <- readOGR(dsn = path, layer = "SP_400_original")
+#Queen_City    <- readOGR(dsn = path, layer = "QC_400_original")
+#Carrizo       <- readOGR(dsn = path, layer = "CZ_400_original")
+#Calvert_Bluff <- readOGR(dsn = path, layer = "CB_400_original")
+#Simboro       <- readOGR(dsn = path, layer = "SB_400_original")
+#Hopper        <- readOGR(dsn = path, layer = "HP_400_original")
+#ShallowZone   <- readOGR(dsn = path, layer = "Total_400_original")
 
-crs(ShallowZone) <- crs(Hopper)
+#crs(ShallowZone) <- crs(Hopper)
 
 ## read in the spatial line df for river
-path_river = ("input/GIS/shapefiles/hydrology")
-river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_pts")
+#path_river = ("input/GIS/shapefiles/hydrology")
+#river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_pts")
 
 ## read the DEM .tif file
-DEM <- raster("input/GIS/rasters/DEM_POSGCD_NeighboringCounties.tif")
+#DEM <- raster("input/GIS/rasters/DEM_POSGCD_NeighboringCounties.tif")
 
 # import the pumping raster (difference in water level after pumping )
-pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
-pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
-pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+#pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
+#pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
+#pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
 
-pumping <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+#pumping <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
 
 #plot(pumping500_2018)
 #plot(pumping500_2020)
@@ -134,21 +139,39 @@ library(dplyr)
 library(pracma)
 
 # choose the year of WL you want to work on
-data <- water_level %>%
-  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2, ScrBot2, SH_Note, Aq2Use, WL2019,WL2020,  WL2019Loc.DD.Adjt,WL2020Loc.DD.Adjt) %>%
-
 # filter out NAs in both WL2019 and WL2020 to keep same number of measured water levels for both years
-filter(WL2019Loc.DD.Adjt != 'NA' & WL2020Loc.DD.Adjt != 'NA') 
+data <- water_level %>%
+  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2,
+                ScrBot2, SH_Note, Aq2Use,WL2015,WL2018 ,WL2019,WL2020,  
+                WL2019Loc.DD.Adjt,WL2020Loc.DD.Adjt, 
+                Shallow.Combined.1929.noJackson, Shallow.Below.1929.noJackson)
+data$WL2015
+
+
+#%>%   filter(cal_year != 0) 
+
 #head(data)
 
 # we can also only exclude NAs for individual years
 data_2019 <- data %>% 
   dplyr::select(Longitude, Latitude, WL2019Loc.DD.Adjt) %>%
-  filter(WL2019Loc.DD.Adjt != 'NA')
+  filter(WL2019Loc.DD.Adjt != 0)
+#
+#data_2020 <- data %>% 
+#  dplyr::select(Longitude, Latitude, cal_year) %>%
+#  filter(WL2015 != 0)
+
+#data_tmp <- data %>% 
+#  dplyr::select(Longitude, Latitude, cal_year)
+
+#data_tmp
 
 data_2020 <- data %>% 
-  dplyr::select(Longitude, Latitude, WL2020Loc.DD.Adjt) %>%
-  filter(WL2020Loc.DD.Adjt != 'NA')
+  dplyr::select(Longitude, Latitude, cal_year) %>%
+  filter(data[,cal_year] != 0)
+
+#data_2020[,cal_year]
+data_2020$WL2015
 
 # create spatial point data frame with geographic coordinate systems
 data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
@@ -173,17 +196,15 @@ data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13]
 crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 data_spadf <- spTransform(data_spadf,new_crs)
 data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
-data_spadf
-str(data_spadf)
 
 
 #Normalized Data
 normalized = function (x) {(x-min(x))/(max(x)-min(x))}                              # create a normalization function
-data_sp2019@data$WL2019n <- normalized(data_sp2019@data$WL2019)
+#data_sp2019@data$WL2019n <- normalized(data_sp2019@data$WL2019)
 data_sp2020@data$WL2020n <- normalized(data_sp2020@data$WL2020)
-data_spadf@data$WL2019n  <- normalized(data_spadf@data$WL2019)
-data_spadf@data$WL2020n  <- normalized(data_spadf@data$WL2020)
-str(data_sp2019@data)
+#data_spadf@data$WL2019n  <- normalized(data_spadf@data$WL2019)
+#data_spadf@data$WL2020n  <- normalized(data_spadf@data$WL2020)
+#str(data_sp2019@data)
 
 
 ```
@@ -213,13 +234,13 @@ head(sim_wl.dataframesubset)
 
 # create a subset DEM spatialpointdataframe for variogram modeling 
 sim_wl2020.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
-crs(sim_wl2020.datasubset) <- crs(data_spadf)
+#crs(sim_wl2020.datasubset) <- crs(data_spadf)
 
 sim_wl2019.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
-crs(sim_wl2019.datasubset) <- crs(data_spadf)
+#crs(sim_wl2019.datasubset) <- crs(data_spadf)
 
-head(sim_wl2019.datasubset)
-head(sim_wl2020.datasubset)
+#head(sim_wl2019.datasubset)
+#head(sim_wl2020.datasubset)
 ```
 
 # Modelling the spatial structure of the target variable - make variogram
@@ -231,10 +252,10 @@ head(sim_wl2020.datasubset)
 # look at the spatial point data frame
 #data_spadf
 #str(data_spadf)
-cal_year <- "2020"
+
 
 # plot the empirical variogram for measured water levels at specific years
-v_WL2020n <- variogram(WL2020n ~ 1 , data=data_spadf, cutoff=300000, width=20000)
+v_WL2020n <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=300000, width=20000)
 #str(v_WL2020n)
 #summary(v_WL2020n)
 #v_WL2020n$np
