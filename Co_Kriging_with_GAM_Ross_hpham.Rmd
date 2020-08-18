@@ -12,79 +12,91 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r }
 
-#list_libs <- c("rgdal","readr")
-#lapply(list_libs, require, character.only = TRUE)
+list_libs <- c("rgdal","readr","smerc","maptools","sf","raster","rasterVis",
+               "dismo","spatial","sp","maxstat","RColorBrewer","LaplacesDemon",
+               "imager","pracma","rgeos","maps","rnaturalearth","rnaturalearthdata",
+               "ggspatial","ggplot2","wesanderson","mltools","gganimate",
+               "tools","zoo","lubridate","ggnewscale","gstat","taRifx")
+lapply(list_libs, require, character.only = TRUE)
 
-library(rgdal)
-library(readr)
-library(smerc)                                 #Implements statistical methods for analyzing the counts of areal data, with a 
-library(maptools)
-library(sf)
-library(raster)
-library(rasterVis)                        # The rasterVis package complements the raster package, providing a set of methods for enhanced              
-library(dismo)
-library(spatial)
-library(sp)
-library(maxstat)
-library(rgdal)
-library(RColorBrewer)
-library(LaplacesDemon)
-library(imager)
-library(pracma)
-library("rgeos")
-library(maps)
-library("rnaturalearth")
-library("rnaturalearthdata")
-library(ggspatial)
-library(ggplot2)
-library(wesanderson)
-library(mltools)
-library(gganimate)                           # create anamination
-library(tools)
-library(zoo)
-library(lubridate)
-library(ggnewscale)                          #use multiple colour and fill scales in ggplot2
-library(gstat)
-library(taRifx)
+### load library using the `pacman` package
+### pacman will automatically installed missing packages
+#if (!require("pacman")) install.packages("pacman")
+#pacman::p_load(here,
+#rgdal,readr,smerc,maptools,sf,
+#raster,rasterVis,
+#dismo,spatial,sp,maxstat,RColorBrewer,LaplacesDemon,
+#imager,pracma,rgeos)
+
+#library(rgdal)
+#library(readr)
+#library(smerc)       #Implements statistical methods for analyzing the counts of areal data, with a 
+#library(maptools)
+#library(sf)
+#library(raster)
+#library(rasterVis)  # The rasterVis package complements the raster package, providing a set of methods for enhanced            
+#library(dismo)
+#library(spatial)
+#library(sp)
+#library(maxstat)
+#library(RColorBrewer)
+#library(LaplacesDemon)
+#library(imager)
+#library(pracma)
+#library(rgeos)
+#library(maps)
+#library(rnaturalearth)
+#library(rnaturalearthdata)
+#library(ggspatial)
+#library(ggplot2)
+#library(wesanderson)
+#library(mltools)
+#library(gganimate)            # create anamination
+#library(tools)
+#library(zoo)
+#library(lubridate)
+#library(ggnewscale)          #use multiple colour and fill scales in ggplot2
+#library(gstat)
+#library(taRifx)
 
 ## Read in the water level .csv file
 path_waterlevel = ("input/data/water_levels")
 water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
 
 ## read in the spatial polygons for each acquifer
-path <- ("input/GIS/shapefiles/geology/District_Geology_Boundaries")
+#path <- ("input/GIS/shapefiles/geology/District_Geology_Boundaries")
 
-Yegua_Jackson <- readOGR(dsn = path, layer = "YJ_400_original")
-Sparta        <- readOGR(dsn = path, layer = "SP_400_original")
-Queen_City    <- readOGR(dsn = path, layer = "QC_400_original")
-Carrizo       <- readOGR(dsn = path, layer = "CZ_400_original")
-Calvert_Bluff <- readOGR(dsn = path, layer = "CB_400_original")
-Simboro       <- readOGR(dsn = path, layer = "SB_400_original")
-Hopper        <- readOGR(dsn = path, layer = "HP_400_original")
-ShallowZone   <- readOGR(dsn = path, layer = "Total_400_original")
+#Yegua_Jackson <- readOGR(dsn = path, layer = "YJ_400_original")
+#Sparta        <- readOGR(dsn = path, layer = "SP_400_original")
+#Queen_City    <- readOGR(dsn = path, layer = "QC_400_original")
+#Carrizo       <- readOGR(dsn = path, layer = "CZ_400_original")
+#Calvert_Bluff <- readOGR(dsn = path, layer = "CB_400_original")
+#Simboro       <- readOGR(dsn = path, layer = "SB_400_original")
+#Hopper        <- readOGR(dsn = path, layer = "HP_400_original")
+#ShallowZone   <- readOGR(dsn = path, layer = "Total_400_original")
 
-crs(ShallowZone) <- crs(Hopper)
+#crs(ShallowZone) <- crs(Hopper)
 
 ## read in the spatial line df for river
-path_river = ("input/GIS/shapefiles/hydrology")
-river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_pts")
+#path_river = ("input/GIS/shapefiles/hydrology")
+#river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_pts")
 
 ## read the DEM .tif file
-DEM <- raster("input/GIS/rasters/DEM_POSGCD_NeighboringCounties.tif")
+#DEM <- raster("input/GIS/rasters/DEM_POSGCD_NeighboringCounties.tif")
 
 # import the pumping raster (difference in water level after pumping )
-pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
-pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
-pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+#pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
+#pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
+#pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
 
-pumping <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+#pumping <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
 
 #plot(pumping500_2018)
 #plot(pumping500_2020)
 
 # import the GAM (simulated water levels) 
-sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
-sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
+#sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
+#sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
 #plot(sim_WL2020)
 #plot(sim_WL2019)
 
@@ -107,7 +119,7 @@ colnames(data.grid) <- c("x","y")
 data.grid$DEM = 0
 coordinates(data.grid) <- ~ x + y
 crs(data.grid) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs")
-data.grid
+#data.grid
 ```
 
 # crop DEM topography raster to the same extent as the river and measured water levels 
@@ -118,7 +130,7 @@ crs(data.raster) = CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35
 bb =raster::extent(5749040.9338320437818766, 6159040.9338320437818766, 19251409.7630450688302517, 19747409.7630450688302517) 
 #c(5800000, 6100000,19333000,19633000)    #  6159040 - 5749040 = 410000 / 500 = 820   dimension of raster
 data.raster[] = 0                         #  19747409 - 19251409 = 496000 / 500 = 992
-data.raster
+#data.raster
 
 # DEM_raster <- raster(ncols = 750, nrows= 750)
 # crs(DEM_raster) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs ")
@@ -134,92 +146,92 @@ library(dplyr)
 library(pracma)
 
 # choose the year of WL you want to work on
-data <- water_level %>%
-  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2, ScrBot2, SH_Note, Aq2Use, WL2019,WL2020,  WL2019Loc.DD.Adjt,WL2020Loc.DD.Adjt) %>%
-
 # filter out NAs in both WL2019 and WL2020 to keep same number of measured water levels for both years
-filter(WL2019Loc.DD.Adjt != 'NA' & WL2020Loc.DD.Adjt != 'NA') 
-#head(data)
+#filter(WL2019Loc.DD.Adjt != 'NA' & WL2020Loc.DD.Adjt != 'NA') 
+data <- water_level %>%
+  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2, 
+                ScrBot2, SH_Note, Aq2Use, WL2020Loc.DD.Adjt) %>%
+                filter(WL2020Loc.DD.Adjt != 'NA') 
 
 # we can also only exclude NAs for individual years
-data_2019 <- data %>% 
-  dplyr::select(Longitude, Latitude, WL2019Loc.DD.Adjt) %>%
-  filter(WL2019Loc.DD.Adjt != 'NA')
+#data_2019 <- data %>% 
+#  dplyr::select(Longitude, Latitude, WL2019Loc.DD.Adjt) %>%
+#  filter(WL2019Loc.DD.Adjt != 'NA')
 
 data_2020 <- data %>% 
   dplyr::select(Longitude, Latitude, WL2020Loc.DD.Adjt) %>%
   filter(WL2020Loc.DD.Adjt != 'NA')
 
 # create spatial point data frame with geographic coordinate systems
-data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
-crs(data_sp2019) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+#data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
+#crs(data_sp2019) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 data_sp2020 <- SpatialPointsDataFrame(SpatialPoints(data_2020[,1:2]), data.frame(data_2020[,3]))
 crs(data_sp2020) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 # create spatial point data frames with projected coordinate systems
 new_crs <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs ")
-data_sp2019 <- spTransform(data_sp2019,new_crs)
+#data_sp2019 <- spTransform(data_sp2019,new_crs)
 data_sp2020 <- spTransform(data_sp2020,new_crs)
 
 # rename the colnames
-colnames(data_sp2019@coords)[1:2] = c("x","y")
-colnames(data_sp2019@data)        = c("WL2019")  
+#colnames(data_sp2019@coords)[1:2] = c("x","y")
+#colnames(data_sp2019@data)        = c("WL2019")  
 colnames(data_sp2020@coords)[1:2] = c("x","y")
 colnames(data_sp2020@data)        = c("WL2020")  
 
 # create combined spatial point data frame for both years (2019 & 2020) with projected coordinate systems
-data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13])
-crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
-data_spadf <- spTransform(data_spadf,new_crs)
-data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
-data_spadf
-str(data_spadf)
+#data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13])
+#crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+#data_spadf <- spTransform(data_spadf,new_crs)
+#data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
+#data_spadf
+#str(data_spadf)
 
 
 #Normalized Data
 normalized = function (x) {(x-min(x))/(max(x)-min(x))}                              # create a normalization function
-data_sp2019@data$WL2019n <- normalized(data_sp2019@data$WL2019)
+#data_sp2019@data$WL2019n <- normalized(data_sp2019@data$WL2019)
 data_sp2020@data$WL2020n <- normalized(data_sp2020@data$WL2020)
-data_spadf@data$WL2019n  <- normalized(data_spadf@data$WL2019)
-data_spadf@data$WL2020n  <- normalized(data_spadf@data$WL2020)
-str(data_sp2019@data)
+#data_spadf@data$WL2019n  <- normalized(data_spadf@data$WL2019)
+#data_spadf@data$WL2020n  <- normalized(data_spadf@data$WL2020)
+#str(data_sp2019@data)
 
 
 ```
 # preprocessing the GAM (simulated water levels), and extract a subset spatialpointdataframe to variogram and co-krige with measured water levels
 ```{r}
 # convert the selected GAM raster for either 2019 or 2020 to a spatial point data frame, specify the year of the data
-sim_wl.data <- rasterToPoints(sim_WL2020, spatial = TRUE, progress = "window") 
-str(sim_wl.data)
+#sim_wl.data <- rasterToPoints(sim_WL2020, spatial = TRUE, progress = "window") 
+#str(sim_wl.data)
 
 # rename the colname 
-colnames(sim_wl.data@data)[1] = "sim_wl"
+#colnames(sim_wl.data@data)[1] = "sim_wl"
 # normalized the data
-sim_wl.data@data$sim_wln <- normalized(sim_wl.data@data$sim_wl)
-sim_wl.data
-str(sim_wl.data)
+#sim_wl.data@data$sim_wln <- normalized(sim_wl.data@data$sim_wl)
+#sim_wl.data
+#str(sim_wl.data)
 
 # convert the spatial point df to a regular dataframe
-sim_wl.dataframe <- as.data.frame(sim_wl.data)
-colnames(sim_wl.dataframe) <- c("sim_wl","sim_wln", "x", "y")
+#sim_wl.dataframe <- as.data.frame(sim_wl.data)
+#colnames(sim_wl.dataframe) <- c("sim_wl","sim_wln", "x", "y")
 
-str(sim_wl.dataframe)
+#str(sim_wl.dataframe)
 
 # subset 1 in every 500 data for variogram modeling 
-sim_wl.dataframesubset <- subset(sim_wl.dataframe[seq(1,nrow(sim_wl.dataframe), 500),])
-str(sim_wl.dataframesubset)
-head(sim_wl.dataframesubset)
+#sim_wl.dataframesubset <- subset(sim_wl.dataframe[seq(1,nrow(sim_wl.dataframe), 500),])
+#str(sim_wl.dataframesubset)
+#head(sim_wl.dataframesubset)
 
 # create a subset DEM spatialpointdataframe for variogram modeling 
-sim_wl2020.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
-crs(sim_wl2020.datasubset) <- crs(data_spadf)
+#sim_wl2020.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
+#crs(sim_wl2020.datasubset) <- crs(data_spadf)
 
-sim_wl2019.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
-crs(sim_wl2019.datasubset) <- crs(data_spadf)
+#sim_wl2019.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
+#crs(sim_wl2019.datasubset) <- crs(data_spadf)
 
-head(sim_wl2019.datasubset)
-head(sim_wl2020.datasubset)
+#head(sim_wl2019.datasubset)
+#head(sim_wl2020.datasubset)
 ```
 
 # Modelling the spatial structure of the target variable - make variogram
@@ -234,7 +246,7 @@ head(sim_wl2020.datasubset)
 cal_year <- "2020"
 
 # plot the empirical variogram for measured water levels at specific years
-v_WL2020n <- variogram(WL2020n ~ 1 , data=data_spadf, cutoff=300000, width=20000)
+v_WL2020n <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=300000, width=20000)
 #str(v_WL2020n)
 #summary(v_WL2020n)
 #v_WL2020n$np
@@ -245,8 +257,8 @@ v_WL2020n <- variogram(WL2020n ~ 1 , data=data_spadf, cutoff=300000, width=20000
 
 # create a model for the empirical variogram
 variogram_model_WL2020n <- vgm(0.05,"Gau",200000,0.003)
-str(variogram_model_WL2020n)
-summary(variogram_model_WL2020n)
+#str(variogram_model_WL2020n)
+#summary(variogram_model_WL2020n)
 
 # plot both the fitted variogram model with the empirical variogram
 #plot(v_WL2020n, pl=T, model=variogram_model_WL2020n, main = "Variogram Model")
