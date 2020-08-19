@@ -49,7 +49,8 @@ library(taRifx)
 path_waterlevel = ("input/data/water_levels")
 water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
 
-cal_year <- "WL2020_minus_Shallow.Below.1929"
+#cal_year <- "WL2020_minus_Shallow.Below.1929"
+cal_year <- "WL2020"
 thre_cutoff <- as.integer(200000)
 thre_width <- as.integer(15000)
 
@@ -195,33 +196,60 @@ data_sp2020@data$WL2020n <- normalized(data_sp2020@data$WL2020)
 # 1. the variogram method computes the experimental variogram as a variogram object
 # 2. the vgm method creates a variogram model object
 # 3. the fit.variogram method adjusts a variogram model object to a variogram object
+
 ```{r}
 # look at the spatial point data frame
 #data_spadf
+#str(data_spadf)
+
 
 # plot the empirical variogram for measured water levels at specific years
-v.WLn <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=thre_cutoff, width=thre_width)
-plot(v.WLn, main = "Empirical Variogram",pl = T)
+v_WL2020n <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=thre_cutoff, width=thre_width)
+#str(v_WL2020n)
+#summary(v_WL2020n)
+#v_WL2020n$np
+#v_WL2020n$dist
+
+# Plot empirical variogram
+#plot(v_WL2020n, main = "Empirical Variogram",pl = T)
 
 # create a model for the empirical variogram
-m.WLn <- vgm(0.05,"Gau",100000,0.003)
+variogram_model_WL2020n <- vgm(0.05,"Gau",100000,0.003)
+#str(variogram_model_WL2020n)
+#summary(variogram_model_WL2020n)
 
 # plot both the fitted variogram model with the empirical variogram
-plot(v.WLn, pl=T, model=m.WLn, main = "Variogram Model")
-(m.WLn.f <- fit.variogram(v.WLn, m.WLn))
+#plot(v_WL2020n, pl=T, model=variogram_model_WL2020n, main = "Variogram Model")
+#(variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n))
 
-plot(v.WLn, pl=T, model=m.WLn.f, main = "Fitted Variogram Model")
+variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n)
+#str(variogram_model_WL2020n_fit)
+#summary(variogram_model_WL2020n_fit)
+
+# export fig to png
+ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),".png")
+
+png(ofile,width=10,height=8,units="in",res=300)
+plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted OK Variogram Model ", cal_year,"_cutoff_",toString(thre_cutoff)))
+dev.off()
+
+# Save to a csv file
+ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),".csv")
+write.csv(v_WL2020n,ofile)
 ```
+
+
 ## Ordinary Kriging Interpolation of the Target Variable
+
 ```{r}
 # use krige function for oridinary kriging 
-ko <- krige(WL2020~1, locations=data_sp2020, newdata=data.grid, model=m.WLn.f)
+ko <- krige(WL2020~1, locations=data_sp2020, newdata=data.grid, model=variogram_model_WL2020n_fit)
 # extract the kriging estimates and kriging variances 
 #ko_pred <- data.frame(ko$var1.pred)
 #ko_var <- data.frame(ko$var1.var)
 
 # use spplot to plot the kriging results 
-ofile = paste("output/Predicted_WL_",cal_year,"_cutoff_",toString(thre_cutoff),".png")
+ofile = paste("output/WL_raster_",cal_year,"_cutoff_",toString(thre_cutoff),".png")
 png(ofile,width=10,height=8,units="in",res=300)
 sp::spplot(ko, "var1.pred", pch=19, col = "transparent",
      scales=list(draw=TRUE), main="Ordinary Kirging Estimates")
@@ -235,10 +263,9 @@ dev.off()
 # plot contours
 ```{r}
 ko.dataframe = as.data.frame(ko)
-  
+
 ofile = paste("output/WL_contour_",cal_year,"_cutoff_",toString(thre_cutoff),".png")
 png(ofile,width=10,height=8,units="in",res=300)
-
 ggplot(ko.dataframe, aes(x ,y, z = var1.pred)) +
   geom_contour_filled(bins = 20)
 dev.off()
