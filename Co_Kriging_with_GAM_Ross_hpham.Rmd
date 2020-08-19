@@ -66,11 +66,11 @@ thre_width <- as.integer(15000)
 #cal_year <- "Shallow.Combined.1929"
 #cal_year <- "Shallow.Below.1929"
 
-cal_year <- "WL2018_minus_Shallow.Combined.1929"
-cal_year <- "WL2019_minus_Shallow.Combined.1929"
-cal_year <- "WL2020_minus_Shallow.Combined.1929"
-cal_year <- "WL2018_minus_Shallow.Below.1929"
-cal_year <- "WL2019_minus_Shallow.Below.1929"
+#cal_year <- "WL2018_minus_Shallow.Combined.1929"
+#cal_year <- "WL2019_minus_Shallow.Combined.1929"
+#cal_year <- "WL2020_minus_Shallow.Combined.1929"
+#cal_year <- "WL2018_minus_Shallow.Below.1929"
+#cal_year <- "WL2019_minus_Shallow.Below.1929"
 cal_year <- "WL2020_minus_Shallow.Below.1929"
 
 
