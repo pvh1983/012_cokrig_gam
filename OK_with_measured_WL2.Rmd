@@ -49,10 +49,13 @@ library(taRifx)
 path_waterlevel = ("input/data/water_levels")
 water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
 
+cal_year <- "WL2019_minus_Shallow.Combined.1929"
+cal_year <- "WL2020_minus_Shallow.Combined.1929"
+cal_year <- "WL2019_minus_Shallow.Below.1929"
 #cal_year <- "WL2020_minus_Shallow.Below.1929"
-cal_year <- "WL2020"
+
 thre_cutoff <- as.integer(200000)
-thre_width <- as.integer(15000)
+thre_width <- as.integer(10000)
 
 ## read in the spatial polygons for each acquifer
 path <- ("input/GIS/shapefiles/geology/District_Geology_Boundaries")
@@ -143,6 +146,8 @@ library(pracma)
 data <- water_level %>%
   dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2,
                 ScrBot2, SH_Note, Aq2Use, cal_year)
+
+
 # Shallow.Combined.1929, Shallow.Below.1929
 #Shallow.Combined.1929.noJackson, Shallow.Below.1929.noJackson
 #data$WL2015
@@ -155,6 +160,8 @@ data <- water_level %>%
 data_2020 <- data %>% 
   dplyr::select(Longitude, Latitude, cal_year) %>%
   filter(data[,cal_year] != 0)
+
+#data_2020$WL2020.Shallow.Below.1929 <- data$WL2020 - data$Shallow.Below.1929
 
 # create spatial point data frame with geographic coordinate systems
 #data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
@@ -264,6 +271,10 @@ dev.off()
 ```{r}
 ko.dataframe = as.data.frame(ko)
 
+# Write to csv
+ofile = paste("output/pred_wl_",cal_year,"_cutoff_",toString(thre_cutoff),".csv")
+write.csv(ko.dataframe,ofile)
+
 ofile = paste("output/WL_contour_",cal_year,"_cutoff_",toString(thre_cutoff),".png")
 png(ofile,width=10,height=8,units="in",res=300)
 ggplot(ko.dataframe, aes(x ,y, z = var1.pred)) +
@@ -312,14 +323,25 @@ OK_avg
 
 # create raster and write on file
 ```{r}
+
+
+#ko@data$var1.predN <- InvNormalize(ko$var1.pred)
+ko@data$var1.predN <- InvNormalize(ko$var1.pred)
+ko.raster <- raster(nrows = 10000,ncols =10000)
+crs(ko.raster) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs")
+extent(ko.raster) <- extent(ko)
+ko.raster <- rasterize(ko, ko.raster, field = "var1.pred", fun = mean)
+ko.raster
+#writeRaster(ko.raster, "output/CKDEM_raster_2020", "GTiff", overwrite = TRUE)
+
 # specify the image path on disk
-image_path = "output/Shapefile/"
+#image_path = "output/Shapefile/"
 # create raster and store it 
 # only extract the predicted water levels 
-ko@data$var1.predN <- InvNormalize(ko$var1.pred)
-ko_tmp <- ko[,-(1:2)]
+#ko@data$var1.predN <- InvNormalize(ko$var1.pred)
+#ko_tmp <- ko[,-(1:2)]
 
-ko_tmp
+#ko_tmp
 # ko.raster <- raster(nrows = 10000,ncols =10000)
 # crs(ko.raster) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs")
 # extent(ko.raster) <- extent(ko)
@@ -327,7 +349,7 @@ ko_tmp
 # ko.raster
 
 # write the kriging estimates as a spatial point data frame and save as a shape file 
-writeOGR(obj = ko_tmp, layer = "OK_2020", dsn = image_path, driver = "ESRI Shapefile", overwrite_layer = TRUE)
+#writeOGR(obj = ko_tmp, layer = "OK_2020", dsn = image_path, driver = "ESRI Shapefile", overwrite_layer = TRUE)
 
 ```
 
