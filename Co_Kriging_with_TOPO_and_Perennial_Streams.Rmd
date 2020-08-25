@@ -1,6 +1,6 @@
 ---
 title: "Co-Kriging with Topography and Perennial Streams"
-author: "Yuchen Xiao"
+author: "YX"
 date: "8/13/2020"
 output: html_document
 ---
@@ -46,12 +46,12 @@ library(taRifx)
 library(splines)
 
 ## Read in the water level .csv file
-path_waterlevel = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data")
+path_waterlevel = ("input/data/water_levels")
 water_level     <- read.csv(paste(path_waterlevel,"/Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
 RiverRegression <- read.csv(paste(path_waterlevel,"/Linear_Relationship_of_River_Elevation.csv", sep = ''))
 
 ## read in the spatial polygons for each acquifer
-path = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/geology/District_Geology_Boundaries")
+path <- ("input/GIS/shapefiles/geology/District_Geology_Boundaries")
 Yegua_Jackson <- readOGR(dsn = path, layer = "YJ_400_original")
 Sparta        <- readOGR(dsn = path, layer = "SP_400_original")
 Queen_City    <- readOGR(dsn = path, layer = "QC_400_original")
@@ -63,30 +63,33 @@ ShallowZone   <- readOGR(dsn = path, layer = "Total_400_original")
 crs(ShallowZone) <- crs(Hopper)
 
 ## read in the spatial line df for river
-path_river = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/hydrology")
+path_river = ("input/GIS/shapefiles/hydrology")
 #river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_GAM")
 river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_pts_clip")
 
 ## read the DEM .tif file
 # cliped DEM .tif file
-DEM <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/rasters/500ft_res/DEMs/DEM_ShallowArea_Resample500.tif")
+#DEM <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/rasters/500ft_res/DEMs/DEM_ShallowArea_Resample500.tif")
 #DEM <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/rasters/DEM_POSGCD_NeighboringCounties.tif")
+DEM <- raster("input/GIS/rasters/DEM_ShallowArea_Resample500.tif") # hpham: This script reads a different DEM? 
 
 
 D2River_Grid = readOGR(dsn = path_river, layer = "GridCells_500_within_6000_ft_Smooth_Perennial_Streams_wNearestSmoothStreamPt")
 
 # import the pumping raster (difference in water level after pumping )
-pumping500_2018 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
-pumping500_2019 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
-pumping500_2020 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
+pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
+pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
 
 # import the GAM (simulated water levels) 
-sim_WL2020 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
-sim_WL2019 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
+sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
+sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
+#plot(sim_WL2020)
+#plot(sim_WL2019)
 
 
 
-setwd("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/R Code")
+#setwd("c:/Users/hpham/OneDrive - INTERA Inc/projects/012_rscript_geostats_s/scripts/")
 
 
 ```
@@ -428,7 +431,7 @@ k.cc@data$WL.RIVER.predn = InvNormalize(k.cc@data$WL.RIVER.pred)
 k.cc
 
 
-sp::spplot(k.cc, "WL2020n.pred", pch=19, col = "transparent",
+sp::spplot(k.cc, "WL.RIVER.pred", pch=19, col = "transparent",
      scales=list(draw=TRUE), main="Co-Kirging Estimates with DEM", xlab = "x", ylab = "y", widths = 10)
 ```
 
