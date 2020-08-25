@@ -114,11 +114,16 @@ crs(DEM.datasubset) <- crs(DEM.data)
 DEM.datasubset
 
 plot(DEM.raster)
+
 # plot the histograms to compare distributions 
 h1 <- histogram(~ DEM, DEM.dataframe, xlab="DEM", col="lightblue",main ="DEM", nint=12)
-
-h3 <- histogram(~ WL2020, data_regdf, xlab="Measured Water Level (2020)", main = "Measured Water Level", col="green", nint=12)
+#h2 <- histogram(~ DEM, river.data, xlab="River_DEM", col="red4", main = "River DEM", nint=12)
+breaks = seq(150, 550, 25)
+h3 <- histogram(~ WL2020, data_regdf, xlab="Measured Water Level (2020)", main = "Measured Water Level", col="green", breaks = breaks)
+h4 <- histogram(~ WL2019, data_regdf, xlab="Measured Water Level (2019)", main = "Measured Water Level", col="green", breaks = breaks)
+length(data_regdf$WL2020)
 h1
-
+#h2
 h3
+h4
 
