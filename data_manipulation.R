@@ -38,59 +38,105 @@ DEM.raster
 library(dplyr)
 library(pracma)
 # choose the year of WL you want to work on
+#data <- water_level %>%
+#  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2, ScrBot2, SH_Note, Aq2Use, WL2019,WL2020) %>%
+#  # filter out NAs in both WL2019 and WL2020 to keep same number of measured water levels for both years
+#  filter(WL2019 != 0 & WL2020 != 0) 
+#head(data)
+
 data <- water_level %>%
-  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2, ScrBot2, SH_Note, Aq2Use, WL2019,WL2020) %>%
-  # filter out NAs in both WL2019 and WL2020 to keep same number of measured water levels for both years
-  filter(WL2019 != 0 & WL2020 != 0) 
-head(data)
+  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2,
+                ScrBot2, SH_Note, Aq2Use, cal_year) # hpham
+
+
 
 # we can also only exclude NAs for individual years
-data_2019 <- data %>% 
-  dplyr::select(Longitude, Latitude, WL2019) %>%
-  filter(WL2019 != 'NA')
+#data_2019 <- data %>% 
+#  dplyr::select(Longitude, Latitude, WL2019) %>%
+#  filter(WL2019 != 'NA')
+
+#data_2020 <- data %>% 
+#  dplyr::select(Longitude, Latitude, WL2020) %>%
+#  filter(WL2020 != 'NA')
 
 data_2020 <- data %>% 
-  dplyr::select(Longitude, Latitude, WL2020) %>%
-  filter(WL2020 != 'NA')
+  dplyr::select(Longitude, Latitude, cal_year) %>%
+  filter(data[,cal_year] != 0) # hpham
 
 
 
 # create spatial point data frame with geographic coordinate systems
-data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
-crs(data_sp2019) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+#data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
+#crs(data_sp2019) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 data_sp2020 <- SpatialPointsDataFrame(SpatialPoints(data_2020[,1:2]), data.frame(data_2020[,3]))
 crs(data_sp2020) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 # create spatial point data frames with projected coordinate systems
 new_crs <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs ")
-data_sp2019 <- spTransform(data_sp2019,new_crs)
+#data_sp2019 <- spTransform(data_sp2019,new_crs)
 data_sp2020 <- spTransform(data_sp2020,new_crs)
 
 # rename the colnames
-colnames(data_sp2019@coords)[1:2] = c("x","y")
-colnames(data_sp2019@data)        = c("WL2019")  
+#colnames(data_sp2019@coords)[1:2] = c("x","y")
+#colnames(data_sp2019@data)        = c("WL2019")  
 colnames(data_sp2020@coords)[1:2] = c("x","y")
 colnames(data_sp2020@data)        = c("WL2020")  
 
 # create combined spatial point data frame for both years (2019 & 2020) with projected coordinate systems
-data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13])
-crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
-data_spadf <- spTransform(data_spadf,new_crs)
-data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
-data_spadf
+#data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13])
+#crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+#data_spadf <- spTransform(data_spadf,new_crs)
+#data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
+#data_spadf
 
-data_regdf = as.data.frame(data_spadf)
+#data_regdf = as.data.frame(data_spadf)
 #Normalized Data
 normalized = function (x) {(x-min(x))/(max(x)-min(x))}                              # create a normalization function
-data_sp2019@data$WL2019n <- normalized(data_sp2019@data$WL2019)
+#data_sp2019@data$WL2019n <- normalized(data_sp2019@data$WL2019)
 data_sp2020@data$WL2020n <- normalized(data_sp2020@data$WL2020)
-data_spadf@data$WL2019n  <- normalized(data_spadf@data$WL2019)
-data_spadf@data$WL2020n  <- normalized(data_spadf@data$WL2020)
+#data_spadf@data$WL2019n  <- normalized(data_spadf@data$WL2019)
+#data_spadf@data$WL2020n  <- normalized(data_spadf@data$WL2020)
+
+# [4] preprocessing the GAM (simulated water levels), and extract a subset 
+# spatialpointdataframe to variogram and co-krige with measured water levels
+
+# convert the selected GAM raster for either 2019 or 2020 to a spatial point data frame, specify the year of the data
+sim_wl.data <- rasterToPoints(sim_WL2020, spatial = TRUE, progress = "window")
+#str(sim_wl.data)
+
+# rename the colname
+colnames(sim_wl.data@data)[1] = "sim_wl"
+# normalized the data
+sim_wl.data@data$sim_wln <- normalized(sim_wl.data@data$sim_wl)
+sim_wl.data
+str(sim_wl.data)
+summary(sim_wl.data)
+
+# convert the spatial point df to a regular dataframe
+sim_wl.dataframe <- as.data.frame(sim_wl.data)
+colnames(sim_wl.dataframe) <- c("sim_wl","sim_wln", "x", "y")
+
+#str(sim_wl.dataframe)
+
+# subset 1 in every 500 data for variogram modeling
+sim_wl.dataframesubset <- subset(sim_wl.dataframe[seq(1,nrow(sim_wl.dataframe), 500),])
+str(sim_wl.dataframesubset)
+head(sim_wl.dataframesubset)
+
+# create a subset DEM spatialpointdataframe for variogram modeling
+sim_wl2020.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
+crs(sim_wl2020.datasubset) <- crs(data_sp2020)
+
+#sim_wl2019.datasubset <- SpatialPointsDataFrame(SpatialPoints(sim_wl.dataframesubset[,3:4]),data=data.frame(sim_wl.dataframesubset[,1:2]))
+#crs(sim_wl2019.datasubset) <- crs(data_spadf)
+
+#summary(sim_wl2019.datasubset)
+head(sim_wl2020.datasubset)
 
 
 
-# [4] Display histogram of the covariates (DEM) and target variables (measured water level)
+# [5] Display histogram of the covariates (DEM) and target variables (measured water level)
 
 # convert DEM raster to spatialpointdataframe
 DEM.data <- rasterToPoints(DEM.raster, spatial=TRUE, progress="window")
@@ -119,11 +165,11 @@ plot(DEM.raster)
 h1 <- histogram(~ DEM, DEM.dataframe, xlab="DEM", col="lightblue",main ="DEM", nint=12)
 #h2 <- histogram(~ DEM, river.data, xlab="River_DEM", col="red4", main = "River DEM", nint=12)
 breaks = seq(150, 550, 25)
-h3 <- histogram(~ WL2020, data_regdf, xlab="Measured Water Level (2020)", main = "Measured Water Level", col="green", breaks = breaks)
-h4 <- histogram(~ WL2019, data_regdf, xlab="Measured Water Level (2019)", main = "Measured Water Level", col="green", breaks = breaks)
-length(data_regdf$WL2020)
-h1
+#h3 <- histogram(~ WL2020, data_regdf, xlab="Measured Water Level (2020)", main = "Measured Water Level", col="green", breaks = breaks)
+#h4 <- histogram(~ WL2019, data_regdf, xlab="Measured Water Level (2019)", main = "Measured Water Level", col="green", breaks = breaks)
+#length(data_regdf$WL2020)
+#h1
 #h2
-h3
-h4
+#h3
+#h4
 

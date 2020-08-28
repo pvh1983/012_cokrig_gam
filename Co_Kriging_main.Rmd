@@ -19,15 +19,17 @@ source("get_input.R")
 #cal_year <- "WL2020_minus_Shallow.Combined.1929"
 #cal_year <- "WL2019_minus_Shallow.Below.1929"
 #cal_year <- "WL2020_minus_Shallow.Below.1929"
-cal_year <- "WL2019_"
-#cal_year <- "WL2020_"
-#cal_year <- "shallow_below-2019_3yr"
-#cal_year <- "shallow_below-2020_3yr"
+
+#cal_year <- "WL2019_3yr"
+cal_year <- "WL2020_3yr"
+#cal_year <- "shallow_below_2019_3yr"
+#cal_year <- "shallow_below_2020_3yr"
 
 thre_cutoff <- as.integer(200000)
 thre_width <- as.integer(10000)
 
-method <- "OK_Water_Levels" # OK_Water_Levels, Co_Kriging_GAM, Co_Kriging_Topo_Streams
+method_script_name <- "Co_Kriging_Topo_DEM" # OK_Water_Levels, Co_Kriging_GAM, Co_Kriging_Topo_Streams, Co_Kriging_Topo_DEM
+method <- "Co_Kriging_Topo_DEM" # OK_Water_Levels, Co_Kriging_GAM, Co_Kriging_Topo_Streams
 
 ```
 
@@ -40,7 +42,7 @@ source("data_manipulation.R")
 ```{r}
 # Choose an interpolation method
 # [1]
-source(paste(method,".R", sep=""))
+source(paste(method_script_name,".R", sep=""))
 
 # [2]
 #source("Co_Kriging_GAM.R")

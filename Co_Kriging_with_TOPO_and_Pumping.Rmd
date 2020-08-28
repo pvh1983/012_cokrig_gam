@@ -1,7 +1,7 @@
 ---
-title: "Co-Kriging with Topography DEM"
+title: "Co-Kriging with TOPO and Pumping"
 author: "YX"
-date: "8/13/2020"
+date: "8/20/2020"
 output: html_document
 ---
 
@@ -19,33 +19,17 @@ source("get_input.R")
 # Prepare data
 source("data_manipulation.R")
 
-# Co-Kriging
-source("Co_Kriging_Topo_DEM.R")
+# Modelling the spatial structure of the target variable - make variogram
+# 1. the variogram method computes the experimental variogram as a variogram object
+# 2. the vgm method creates a variogram model object
+# 3. the fit.variogram method adjusts a variogram model object to a variogram object
+source("Kriging_Topo_pumping.R")
 
 # extract values for each acquifer for cokriging with DEM
 # create raster and write on file
 source("write_outputs.R")
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

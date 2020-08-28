@@ -43,6 +43,8 @@ library(ggnewscale)                            # use multiple colour and fill sc
 library(gstat)
 library(taRifx)
 
+# No longer used, RUN Co_Kriging_main.Rmd
+
 ## Read in the water level .csv file
 #path_waterlevel = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data")
 #water_level <- read.csv(paste(path_waterlevel,"/Well_info.csv",sep=''))
@@ -91,7 +93,7 @@ crs(ShallowZone) <- crs(Hopper)
 
 
 # import the GAM (simulated water levels) 
-#sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
+sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
 #sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
 #plot(sim_WL2020)
 #plot(sim_WL2019)

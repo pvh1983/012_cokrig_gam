@@ -33,9 +33,11 @@ variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n)
 #summary(variogram_model_WL2020n_fit)
 
 # export fig to png
-ofile = paste("output/",method,"_fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),".png", sep="")
+ofile = paste("output/",method,"_fitted_variogram_",cal_year,"_cutoff_", toString(thre_cutoff),".png", sep="")
 png(ofile,width=10,height=8,units="in",res=300)
-plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted OK Variogram Model ", cal_year,"_cutoff_",toString(thre_cutoff)))
+vplot <- plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted Variogram, data=", 
+                                                                       cal_year,", cutoff=",toString(thre_cutoff)))
+print(vplot,width = 3, height = 3, dpi = 300)
 dev.off()
 
 # Save to a csv file
@@ -61,19 +63,20 @@ min <- min(data_sp2020@data$WL2020)
 max <- max(data_sp2020@data$WL2020)
 # back transform to original scales
 InvNormalize <- function (x) {x * (max - min) + min}
-ko@data$var1.predn <- InvNormalize(ko@data$var1.pred)
-ko@data$var1.varn <- ko@data$var1.predn*ko@data$var1.var
+ko@data$WL_pred <- InvNormalize(ko@data$var1.pred)
+ko@data$WL_var <- ko@data$WL_pred*ko@data$var1.var
 summary(ko)
 
-# use spplot to plot the kriging results 
-ofile = paste("output/WL_raster_",cal_year,"_cutoff_",toString(thre_cutoff),".png",sep="")
-png(ofile,width=10,height=8,units="in",res=300)
-sp::spplot(ko, "var1.pred", pch=19, col = "transparent",
-     scales=list(draw=TRUE), main="Ordinary Kirging Estimates")
-dev.off()
-
-#sp::spplot(ko, "var1.var", pch=19, col = "transparent",
-#     scales=list(draw=TRUE), main="Ordinary Kirging Estimates")
+# # use spplot to plot the kriging results 
+# ofile = paste("output/WL_raster_",cal_year,"_cutoff_",toString(thre_cutoff),".png",sep="")
+# png(ofile,width=10,height=8,units="in",res=300)
+# tmp_png <- sp::spplot(ko, "WL_pred", pch=19, col = "transparent",
+#      scales=list(draw=TRUE), main="Ordinary Kirging Estimates")
+# print(tmp_png)
+# dev.off()
+# 
+# #sp::spplot(ko, "var1.var", pch=19, col = "transparent",
+# #     scales=list(draw=TRUE), main="Ordinary Kirging Estimates")
 
 
 
@@ -85,11 +88,23 @@ ko.dataframe = as.data.frame(ko)
 ofile = paste("output/", method ,"_pred_wl_",cal_year,"_cutoff_",toString(thre_cutoff),".csv",sep="")
 write.csv(ko.dataframe,ofile)
 
-ofile = paste("output/", method, "_WL_contour_",cal_year,"_cutoff_",toString(thre_cutoff),".png",sep="")
-png(ofile,width=10,height=8,units="in",res=300)
-ggplot(ko.dataframe, aes(x ,y, z = var1.pred)) +
+# Export interpolated water levels
+ofile = paste("output/", method, "_pred_wl_",cal_year,"_cutoff_",toString(thre_cutoff),".png",sep="")
+#png(ofile,width=10,height=8,units="in",res=300)
+ggplot(ko.dataframe, aes(x ,y, z = WL_pred)) +
   geom_contour_filled(bins = 20)
-dev.off()
+ggsave(ofile, width = 8, height = 6, dpi = 300)
+#dev.off()
+
+# Export Kriging variance
+ofile = paste("output/", method, "_kriging_var_",cal_year,"_cutoff_",toString(thre_cutoff),".png",sep="")
+#png(ofile,width=10,height=8,units="in",res=300)
+ggplot(ko.dataframe, aes(x ,y, z = WL_var)) +
+  geom_contour_filled(bins = 20)
+ggsave(ofile, width = 8, height = 6, dpi = 300,)
+#dev.off()
+
+
 
 #var <- ggplot(ko.dataframe, aes(x ,y, z = var1.var)) +
 #  geom_contour_filled(bins = 20)
@@ -131,10 +146,10 @@ OK_avg
 
 
 
-#ko@data$var1.predN <- InvNormalize(ko$var1.pred)
-#ko@data$var1.predN <- InvNormalize(ko$var1.pred)
-ko$var1.predn = InvNormalize(ko$var1.pred)
-ko$var1.varn = ko$var1.predn * ko$var1.var
+#ko@data$WL_pred <- InvNormalize(ko$var1.pred)
+#ko@data$WL_pred <- InvNormalize(ko$var1.pred)
+#ko$WL_pred = InvNormalize(ko$var1.pred)
+#ko$WL_var = ko$WL_pred * ko$var1.var
 
 
 ko.raster <- raster(nrows = 10000,ncols =10000)
@@ -148,14 +163,14 @@ ko.raster
 #image_path = "output/Shapefile/"
 # create raster and store it 
 # only extract the predicted water levels 
-#ko@data$var1.predN <- InvNormalize(ko$var1.pred)
+#ko@data$WL_pred <- InvNormalize(ko$var1.pred)
 #ko_tmp <- ko[,-(1:2)]
 
 #ko_tmp
 # ko.raster <- raster(nrows = 10000,ncols =10000)
 # crs(ko.raster) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs")
 # extent(ko.raster) <- extent(ko)
-# ko.raster <- rasterize(ko, ko.raster, field = "var1.predN", fun = mean)
+# ko.raster <- rasterize(ko, ko.raster, field = "WL_pred", fun = mean)
 # ko.raster
 
 # write the kriging estimates as a spatial point data frame and save as a shape file 

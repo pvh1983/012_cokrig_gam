@@ -30,9 +30,10 @@ CO_avg
 
 
 # [2] create raster and write on file
-
 # create raster and store it 
-k.temp <- k.cc[,-(1:6)]
+k.cc@data$WL2020.predN <- InvNormalize(k.cc$WL2020.pred)
+k.cc
+k.temp <- k.cc[,-(1:5)]
 k.temp
 # ck.raster <- raster(nrows = 10000,ncols =10000)
 # crs(ck.raster) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs")
@@ -41,6 +42,4 @@ k.temp
 # ck.raster
 #writeRaster(ck.raster, "CKDEM_raster_2020", "GTiff", overwrite = TRUE)
 image_path = "output/Shapefile"
-writeOGR(obj = k.temp, layer = "CK_TOPOPUMPING_2019", dsn = image_path, driver = "ESRI Shapefile", overwrite_layer = TRUE)
-
-
+writeOGR(obj = k.temp, layer = "CK_TOPORIVER_2019", dsn = image_path, driver = "ESRI Shapefile", overwrite_layer = TRUE)
