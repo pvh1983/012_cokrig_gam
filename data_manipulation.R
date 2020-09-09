@@ -44,9 +44,9 @@ library(pracma)
 #  filter(WL2019 != 0 & WL2020 != 0) 
 #head(data)
 
+
 data <- water_level %>%
-  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2,
-                ScrBot2, SH_Note, Aq2Use, cal_year) # hpham
+  dplyr::select(Longitude, Latitude, data_col_name) # hpham
 
 
 
@@ -60,8 +60,8 @@ data <- water_level %>%
 #  filter(WL2020 != 'NA')
 
 data_2020 <- data %>% 
-  dplyr::select(Longitude, Latitude, cal_year) %>%
-  filter(data[,cal_year] != 0) # hpham
+  dplyr::select(Longitude, Latitude, data_col_name) %>%
+  filter(data[,data_col_name] != 0) # hpham
 
 
 

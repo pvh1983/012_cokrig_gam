@@ -1,48 +1,11 @@
-
-# Load libraries ==============================================================
-library(rgdal)
-library(smerc)                                 # Implements statistical methods for analyzing the counts of areal data, with a 
-library(maptools)
-library(sf)
-library(raster)
-library(rasterVis)                             # The rasterVis package complements the raster package, providing a set of methods for enhanced         
-library(dismo)
-library(spatial)
-library(sp)
-library(maxstat)
-library(rgdal)
-library(RColorBrewer)
-library(LaplacesDemon)
-library(imager)
-library(pracma)
-library(maps)
-library(viridis)
-library("rnaturalearth")
-library("rnaturalearthdata")
-library(ggspatial)
-library(ggplot2)
-library(wesanderson)
-library(mltools)
-library(RColorBrewer)
-library(gganimate)                             # create anamination
-library(tools)
-library(maps)
-library(zoo)
-library(lubridate)
-library(ggnewscale)                            # use multiple colour and fill scales in ggplot2
-library(gstat)
-library(taRifx)
-library(splines)
-
+# Read input files
 setwd("c:/Users/hpham/OneDrive - INTERA Inc/projects/012_rscript_geostats_s/scripts/")
 
 # read input data =============================================================
 
 # [1] Read in the water level .csv file ---------------------------------------
-path_waterlevel = ("input/data/water_levels")
-#water_level <- read.csv(paste(path_waterlevel,"/Shallow.Combined.Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep='')) # Used in OK
-#water_level     <- read.csv(paste(path_waterlevel,"/Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
-water_level     <- read.csv(paste(path_waterlevel,"/Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v3.csv",sep=''))
+#path_waterlevel = ("input/data/water_levels")
+#water_level     <- read.csv(paste(path_waterlevel,"/Shallow.Wells.GMA12.YJ.hds.Smooth.hp.csv",sep=''))
 
 RiverRegression <- read.csv(paste(path_waterlevel,"/Linear_Relationship_of_River_Elevation.csv", sep = ''))
 
@@ -77,18 +40,19 @@ layer = "GridCells_500_within_6000_ft_Smooth_Perennial_Streams_wNearestSmoothStr
 # import the pumping raster (difference in water level after pumping )
 #pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
 #pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
-if (GAM_res == 500) {
+
+#if (GAM_res == 500) {
   pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
   # Ross updated these raster on 08/26/2020
   ifile_GAM_WL <- "input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst18.YJ/Shallow.Combined.Hds.2020.500ft.pst18.YJ.tif"
   #sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst18.YJ/Shallow.Combined.Hds.2020.500ft.pst18.YJ.tif")
-} else if (GAM_res == 32000) {
-  pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
-  # last updated: 09/04/2020 by Ross
-  #ifile_GAM_WL = "input/GIS/Smoothing.GAM.Rasters/Shallow.Below.Hds.2020.Smooth32000ft.tif"
-  ifile_GAM_WL = "input/GIS/Smoothing.GAM.Rasters/Shallow.Combine.Hds.2020.Smooth32000ft.tif"
-  
-}
+#} else if (GAM_res == 32000000000000) {
+#  pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+#  # last updated: 09/04/2020 by Ross
+#  #ifile_GAM_WL = "input/GIS/Smoothing.GAM.Rasters/Shallow.Below.Hds.2020.Smooth32000ft.tif"
+#  ifile_GAM_WL = "input/GIS/Smoothing.GAM.Rasters/Shallow.Combine.Hds.2020.Smooth32000ft.tif"
+#  
+#}
 # import the GAM (simulated water levels) 
 #sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
 #sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
