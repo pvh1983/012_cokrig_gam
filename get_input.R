@@ -75,27 +75,32 @@ D2River_Grid = readOGR(dsn = path_river,
 layer = "GridCells_500_within_6000_ft_Smooth_Perennial_Streams_wNearestSmoothStreamPt")
 
 # import the pumping raster (difference in water level after pumping )
-pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
-pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
-pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
-
+#pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
+#pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
+if (GAM_res == 500) {
+  pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+  # Ross updated these raster on 08/26/2020
+  ifile_GAM_WL <- "input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst18.YJ/Shallow.Combined.Hds.2020.500ft.pst18.YJ.tif"
+  #sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst18.YJ/Shallow.Combined.Hds.2020.500ft.pst18.YJ.tif")
+} else if (GAM_res == 32000) {
+  pumping500_2020 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+  # last updated: 09/04/2020 by Ross
+  #ifile_GAM_WL = "input/GIS/Smoothing.GAM.Rasters/Shallow.Below.Hds.2020.Smooth32000ft.tif"
+  ifile_GAM_WL = "input/GIS/Smoothing.GAM.Rasters/Shallow.Combine.Hds.2020.Smooth32000ft.tif"
+  
+}
 # import the GAM (simulated water levels) 
 #sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
 #sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
 
-# Ross updated these rasters on 08/26/2020
-sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst18.YJ/Shallow.Combined.Hds.2020.500ft.pst18.YJ.tif")
-sim_WL2020 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst18.YJ/Shallow.Combined.Hds.2020.500ft.pst18.YJ.tif")
-
-
-
-#plot(sim_WL2020)
+sim_WL2020 <- raster(ifile_GAM_WL)
+plot(sim_WL2020)
 #plot(sim_WL2019)
 
 # import pumping drawdown information 
 pumpingdrawdown_path = ("input/data/pumping")
-pumping_drawdown2018 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2018.500ft.pst18.YJ")
-pumping_drawdown2019 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2019.500ft.pst18.YJ")
+#pumping_drawdown2018 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2018.500ft.pst18.YJ")
+#pumping_drawdown2019 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2019.500ft.pst18.YJ")
 pumping_drawdown2020 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2020.500ft.pst18.YJ")
 
 
