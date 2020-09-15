@@ -10,31 +10,547 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-# [1] Read input data =============================================================
+library(rgdal)
+library(smerc)                                 # Implements statistical methods for analyzing the counts of areal data, with a 
+library(maptools)
+library(sf)
+library(raster)
+library(rasterVis)                             # The rasterVis package complements the raster package, providing a set of methods for enhanced     library(dismo)
+library(spatial)
+library(sp)
+library(maxstat)
+library(rgdal)
+library(RColorBrewer)
+library(LaplacesDemon)
+library(imager)
+library(pracma)
+library(maps)
+library(viridis)
+library("rnaturalearth")
+library("rnaturalearthdata")
+library(ggspatial)
+library(ggplot2)
+library(wesanderson)
+library(mltools)
+library(RColorBrewer)
+library(gganimate)                             # create anamination
+library(tools)
+library(maps)
+library(zoo)
+library(lubridate)
+library(ggnewscale)                            # use multiple colour and fill scales in ggplot2
+library(gstat)
+library(taRifx)
+library(splines)
 
-# Set working directory
-setwd("c:/Users/hpham/OneDrive - INTERA Inc/projects/012_rscript_geostats_s/scripts/")
+## Read in the water level .csv file
+path_waterlevel = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data")
+water_level     <- read.csv(paste(path_waterlevel,"/Master_WellInfo_w_ShallowWLdata_1Yr_wBRAA_v2.csv",sep=''))
+RiverRegression <- read.csv(paste(path_waterlevel,"/Linear_Relationship_of_River_Elevation.csv", sep = ''))
 
-# Read input data =============================================================
-source("get_input.R")
+## read in the spatial polygons for each acquifer
+path = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/geology/District_Geology_Boundaries")
+Yegua_Jackson <- readOGR(dsn = path, layer = "YJ_400_original")
+Sparta        <- readOGR(dsn = path, layer = "SP_400_original")
+Queen_City    <- readOGR(dsn = path, layer = "QC_400_original")
+Carrizo       <- readOGR(dsn = path, layer = "CZ_400_original")
+Calvert_Bluff <- readOGR(dsn = path, layer = "CB_400_original")
+Simboro       <- readOGR(dsn = path, layer = "SB_400_original")
+Hopper        <- readOGR(dsn = path, layer = "HP_400_original")
+ShallowZone   <- readOGR(dsn = path, layer = "Total_400_original")
+crs(ShallowZone) <- crs(Hopper)
+
+## read in the spatial line df for river
+path_river = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/hydrology")
+#river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_GAM")
+river <-readOGR(dsn = path_river, layer = "NHD_Flowline_Clp_perennial_clean_pts_clip")
+
+## read the DEM .tif file
+# cliped DEM .tif file
+DEM <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/rasters/500ft_res/DEMs/DEM_ShallowArea_Resample500.tif")
+#DEM <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/rasters/DEM_POSGCD_NeighboringCounties.tif")
+
+
+D2River_Grid = readOGR(dsn = path_river, layer = "GridCells_500_within_6000_ft_Smooth_Perennial_Streams_wNearestSmoothStreamPt")
+
+# import the pumping raster (difference in water level after pumping )
+pumping500_2018 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
+pumping500_2019 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
+pumping500_2020 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2020.500ft.pst15.tif")
+
+# import the GAM (simulated water levels) 
+sim_WL2020 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2020.500ft.pst15.tif")
+sim_WL2019 <- raster("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
+
+# import pumping drawdown information 
+pumpingdrawdown_path = ("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Data/Pumping")
+pumping_drawdown2020 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2020.500ft.pst18.YJ")
+pumping_drawdown2019 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2019.500ft.pst18.YJ")
+pumping_drawdown2018 = readOGR(dsn = pumpingdrawdown_path, layer = "Pts.Shallow.Below.DD.2018.500ft.pst18.YJ")
+
+
+
+setwd("C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/R Code")
+
+
 ```
 
+
+# create grids for kriging interpolations 
 ```{r}
-# Prepare data
-source("data_manipulation.R")
+# x <- seq(5800000, 6100000,400)
+# y <- seq(19333000, 19633000,400)
+
+x <- seq(5749040.9338320437818766, 6159040.9338320437818766,500)
+y <- seq(19251409.7630450688302517, 19747409.7630450688302517,500)
+data.grid <- meshgrid(x,y)
+
+data.grid <- data.frame(unlist(matrix(data.grid$X)), unlist(matrix(data.grid$Y)))
+colnames(data.grid) <- c("x","y")
+data.grid$DEM = 0
+coordinates(data.grid) <- ~ x + y
+crs(data.grid) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs")
+data.grid
 ```
 
+
+# crop DEM topography raster to the same extent as the river and measured water levels 
 ```{r}
-# Co-Kriging
-source("Co_Kriging_Topo_Streams_Pumping.R")
+# create a empty raster to store topography DEM 
+data.raster <- rasterFromXYZ(data.frame(data.grid@coords), res=c(500,500))
+dim(data.raster) = c(992,820)
+extent(data.raster) = c(5749040.9338320437818766, 6159040.9338320437818766,19251409.7630450688302517, 19747409.7630450688302517)
+data.raster[] = 0
+data.raster
+
+DEM_raster <- raster(ncols = 1000, nrows= 1000)
+
+crs(DEM_raster) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs ")
+extent(DEM_raster) <- extent(data.grid)
+DEM.raster <- resample(DEM, DEM_raster, method = "bilinear")
+DEM.raster
+    
 ```
 
 
-# [E] Extract values for each acquifer for cokriging with DEM
+# Data wrangling, select specific cols for subsequent analysis and convert to spatial point data frame with correct CRS
 ```{r}
+library(dplyr)
+library(pracma)
+# choose the year of WL you want to work on
+data <- water_level %>%
+  dplyr::select(Longitude, Latitude, SWN, DEM, Depth, ScrTop1, ScrBot1, ScrTop2, ScrBot2, SH_Note, Aq2Use, WL2019,WL2020) %>%
+  # filter out NAs in both WL2019 and WL2020 to keep same number of measured water levels for both years
+  filter(WL2019 != 0 & WL2020 != 0) 
+head(data)
+
+# we can also only exclude NAs for individual years
+data_2019 <- data %>% 
+  dplyr::select(Longitude, Latitude, WL2019) %>%
+  filter(WL2019 != 'NA')
+
+data_2020 <- data %>% 
+  dplyr::select(Longitude, Latitude, WL2020) %>%
+  filter(WL2020 != 'NA')
+
+
+
+# create spatial point data frame with geographic coordinate systems
+data_sp2019 <- SpatialPointsDataFrame(SpatialPoints(data_2019[,1:2]), data.frame(data_2019[,3]))
+crs(data_sp2019) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+
+data_sp2020 <- SpatialPointsDataFrame(SpatialPoints(data_2020[,1:2]), data.frame(data_2020[,3]))
+crs(data_sp2020) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+
+# create spatial point data frames with projected coordinate systems
+new_crs <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs ")
+data_sp2019 <- spTransform(data_sp2019,new_crs)
+data_sp2020 <- spTransform(data_sp2020,new_crs)
+
+# rename the colnames
+colnames(data_sp2019@coords)[1:2] = c("x","y")
+colnames(data_sp2019@data)        = c("WL2019")  
+colnames(data_sp2020@coords)[1:2] = c("x","y")
+colnames(data_sp2020@data)        = c("WL2020")  
+
+# create combined spatial point data frame for both years (2019 & 2020) with projected coordinate systems
+data_spadf <- SpatialPointsDataFrame(SpatialPoints(data[,1:2]),data=data[,12:13])
+crs(data_spadf) = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+data_spadf <- spTransform(data_spadf,new_crs)
+data_spadf@bbox <- t(matrix(extent(data.grid),2))  #crop
+data_spadf
+
+data_regdf = as.data.frame(data_spadf)
+#Normalized Data
+normalized = function (x) {(x-min(x))/(max(x)-min(x))}                              # create a normalization function
+data_sp2019@data$WL2019n <- normalized(data_sp2019@data$WL2019)
+data_sp2020@data$WL2020n <- normalized(data_sp2020@data$WL2020)
+data_spadf@data$WL2019n  <- normalized(data_spadf@data$WL2019)
+data_spadf@data$WL2020n  <- normalized(data_spadf@data$WL2020)
+```
+
+# Display histogram of the covariates (DEM) and target variables (measured water level)
+```{r}
+# convert DEM raster to spatialpointdataframe
+DEM.data <- rasterToPoints(DEM.raster, spatial=TRUE, progress="window")
+DEM.data@bbox <- t(matrix(extent(data.grid),2))
+# change the colname for the spatialpointdataframe
+colnames(DEM.data@data)[1] = "DEM"
+# normalized the data
+DEM.data@data$DEMn <- normalized(DEM.data@data$DEM)
+DEM.data
+# convert to a dataframe
+DEM.dataframe <- as.data.frame(DEM.data)
+colnames(DEM.dataframe) <- c("DEM","DEMn", "x", "y")
+DEM.dataframesubset <- subset(DEM.dataframe[seq(1,nrow(DEM.dataframe), 100),])
+str(DEM.dataframesubset)
+head(DEM.dataframesubset)
+
+# create a subset DEM spatialpointdataframe for variogram modeling 
+DEM.datasubset <- SpatialPointsDataFrame(SpatialPoints(DEM.dataframesubset[,3:4]),data=data.frame(DEM.dataframesubset[,1:2]))
+DEM.datasubset@bbox <- t(matrix(extent(data.grid),2))
+crs(DEM.datasubset) <- crs(DEM.data)
+DEM.datasubset
+
+plot(DEM.raster)
+# plot the histograms to compare distributions 
+h1 <- histogram(~ DEM, DEM.dataframe, xlab="DEM", col="lightblue",main ="DEM", nint=12)
+
+h3 <- histogram(~ WL2020, data_regdf, xlab="Measured Water Level (2020)", main = "Measured Water Level", col="green", nint=12)
+h1
+
+h3
+```
+
+
+# Modelling the spatial structure of the target variable - make variogram
+# 1. the variogram method computes the experimental variogram as a variogram object
+# 2. the vgm method creates a variogram model object
+# 3. the fit.variogram method adjusts a variogram model object to a variogram object
+```{r}
+# plot the empirical variogram for measured water levels at specific years
+plot(v.WLn <- variogram(WL2019n ~ 1 , data=data_spadf, cutoff=300000, width=10000), main = "Empirical Variogram",pl = T)
+# create a model for the empirical variogram
+m.WLn <- vgm(0.05,"Gau",200000,0.003)
+# plot both the fitted variogram model with the empirical variogram
+plot(v.WLn, pl=T, model=m.WLn, main = "Variogram Model")
+(m.WLn.f <- fit.variogram(v.WLn, m.WLn))
+
+plot(v.WLn, pl=T, model=m.WLn.f, main = "Fitted OK Variogram Model")
+```
+
+## Ordinary Kriging Interpolation of the Target Variable
+```{r}
+# use krige function for oridinary kriging 
+ko <- krige(WL2019n~1, locations=data_spadf, newdata=data.grid, model=m.WLn.f)
+# extract the kriging estimates and kriging variances 
+ko_pred <- data.frame(ko$var1.pred)
+ko_var <- data.frame(ko$var1.var)
+
+# find the min and max of the original scale measured water levels for each year
+min <- min(data_spadf@data$WL2019)
+max <- max(data_spadf@data$WL2019)
+# back transform to original scales
+InvNormalize <- function (x) {x * (max - min) + min}
+
+ko$var1.predn = InvNormalize(ko$var1.pred)
+
+# use spplot to plot the kriging results 
+sp::spplot(ko, "var1.pred", pch=19, col = "transparent",
+     scales=list(draw=TRUE), main="Ordinary Kirging Estimates")
+sp::spplot(ko, "var1.var", pch=19, col = "transparent",
+     scales=list(draw=TRUE), main="Ordinary Kirging Estimates")
+
+```
+
+# create a spline model that model the distance relationship of river elevation 
+```{r}
+# filter out distance longer than 5000 ft
+RiverRegression_subset = RiverRegression %>%
+  dplyr::filter(Distance <= 6000)
+
+# set the values to numeric
+RiverRegression_subset$median = as.numeric(RiverRegression_subset$median)
+
+# create a spline model
+summary(model1 <- glm(median ~ bs(Distance, df = 4), data = RiverRegression_subset, family = "gaussian"))
+
+# using the spline model to make prediction
+Predicted_RiverElevation = predict(model1, data.frame(Distance = RiverRegression_subset$Distance))
+
+RiverRegression_subset$prediction = Predicted_RiverElevation
+# plot the prediction and the data
+ggplot(data = RiverRegression_subset) +
+  geom_point(aes(x = Distance, y = median)) +
+  geom_line(aes(x = Distance, y = prediction)) +
+  labs(title = "The Median Value of River Elevation Away From River Streams", x = "Distance From River Streams (ft)", y = "Median Value of River Elevations (ft)")
+
+
+```
+
+
+# add the river elevation on the the prdinary kriging estimates of measured water levels
+```{r}
+# convert spatial point data frame into simple feature in sf package
+ko_sf = st_as_sf(ko)
+D2River_Grid_sf = st_as_sf(D2River_Grid)
+
+
+ko_sfc = st_as_sfc(ko)
+D2River_Grid_sfc = st_as_sfc(D2River_Grid)
+
+# create a buffer zone, 1000 ft
+ko_sfc_buf = st_buffer(ko_sfc, 1000)
+
+# find the intersection of kriging data frame and river data frame 
+# create a sparse geometry binary predicate, also called sparse matrix, which is a list with integer vectors only holding the indices for each polygon that intersects. 
+# find x that is in y
+koRiver_sgbp = st_intersects(x = ko_sfc_buf, y= D2River_Grid_sfc)
+Riverko_sgbp = st_intersects(x = D2River_Grid_sfc, y = ko_sfc_buf)
+
+# find the logical vector 
+koRiver_logical = lengths(koRiver_sgbp) > 0
+River_logical   = lengths(Riverko_sgbp) > 0 
+
+# find the intersection
+ko_river_intersect = ko_sf[koRiver_logical,]
+river_ko_intersect = D2River_Grid_sf[River_logical,]
+
+sum(is.na(river_ko_intersect$SmoothWL))
+
+# create a linear ratio of distance to assign approporiate weights
+LinearDistance_ratio = 1 - river_ko_intersect$Distance/ max(river_ko_intersect$Distance)
+
+# calculate the river pred from distance and smooth water level from 
+
+ko_river_intersect$WLpumping_river = (river_ko_intersect$SmoothWL +  predict(model1, data.frame(Distance = river_ko_intersect$Distance))) * (LinearDistance_ratio * 0.6) + ko_river_intersect$var1.predn * 0.4
+
+
+sum(is.na(ko_river_intersect$river_pred))
+
+diff = ko_river_intersect$river_pred - ko_river_intersect$var1.predn
+hist(river_ko_intersect$SmoothWL)
+
+ko_spatial = as_Spatial(ko_river_intersect)
+ko_spatial = as_Spatial(ko_river_intersect)
+ko.dataframe = as.data.frame(ko_spatial)
+pred <- ggplot(ko.dataframe, aes(coords.x1 ,coords.x2, z = WLpumping_river)) +
+  geom_contour_filled(bins = 20)
+pred
+
+D2River_dataframe = as.data.frame(D2River_Grid)
+pred <- ggplot(D2River_dataframe, aes(coords.x1 ,coords.x2, z = SmoothWL)) +
+  geom_contour_filled(bins = 20)
+pred
+
+# normalize the column
+normalized = function (x) {(x-min(x))/(max(x)-min(x))}    
+ko_spatial$WLpumping_rivern = normalized(ko_spatial@data$WLpumping_river )
+
+
+```
+
+
+# preprocessing the pumping information and hard correct the measured water levels
+```{r}
+# convert to sf
+# note: need to change the year for pumping drawdown
+WL_sf = st_as_sf(data_spadf)
+pumping_sf = st_as_sf(pumping_drawdown2019)
+
+# convert to sfc
+# need to change the year for pumping drawdown
+WL_sfc = st_as_sfc(data_spadf)
+pumping_sfc = st_as_sfc(pumping_drawdown2019)
+
+# create a buffer zone, set the buffer radius to 750 ft
+WL_sfc_buf = st_buffer(WL_sfc, 750)
+
+# create a sgbp (sparse geometry binary predicate)
+pumpingWL_sgbp = st_intersects(x= pumping_sfc, y = WL_sfc_buf)
+WLpumping_sgbp = st_intersects(x= WL_sfc_buf, y = pumping_sfc)
+
+# create a logical vector that indicate whether the points are in the buffer zone 
+WLpumping_logical = lengths(WLpumping_sgbp) > 0
+pumpingWL_logical = lengths(pumpingWL_sgbp) > 0
+# create subsets of the data 
+WLpumping_intersect = WL_sf[WLpumping_logical,]
+pumpingWL_intersect = pumping_sf[pumpingWL_logical,]
+
+# look at the intersections 
+# WLpumping_intersect
+# pumpingWL_intersect
+
+# correct the measured water level data from pumping drawdown for that year
+WLpumping_intersect$WLpumping_river =  aggregate(x= pumpingWL_intersect, by=WL_sfc_buf, FUN = mean)$Drawdown + WLpumping_intersect$WL2019
+
+# convert sf objects to spatialpointdataframe
+WLpumping_spatial = as_Spatial(WLpumping_intersect)
+
+# normalize the column
+normalized = function (x) {(x-min(x))/(max(x)-min(x))}    
+WLpumping_spatial$WLpumping_rivern= normalized(WLpumping_spatial$WLpumping_river)
+
+WLpumping.dataframe = as.data.frame(WLpumping_spatial)
+
+
+pred <- ggplot(data_regdf, aes(Longitude ,Latitude, color = WL2020)) +
+  geom_point(size = 4) +
+   scale_colour_gradientn(colours = terrain.colors(10)) +
+  labs(title = "Measured Water Levels")
+pred
+
+WLpumping.dataframe$diff = WLpumping.dataframe$WLpumping_river - WLpumping.dataframe$WL2020
+
+
+pumping2020 = as.data.frame(pumping_drawdown2020)
+hist(pumping2020$Drawdown, xlab = "Pumping Drawdown (ft)", main = "Pumping Drawdown from Ross's Shapefile", xlim = c(-5,110), freq = FALSE)
+
+
+hist(WLpumping.dataframe$diff, xlab = "Pumping Drawdown (ft)", main = "Corrected Pumping Drawdown Weighted by Distance for Each Measured Water Well",xlim = c(-5,65), freq = FALSE)
+
+data_regdf
+
+
+```
+
+
+# combine two simple features together
+```{r}
+# only extract revelant columns from the two simple features: (1) the WLpumping and (2) the ko_river
+WLpumping_only_sf = st_set_geometry(data.frame(WLpumping_river = WLpumping_intersect$WLpumping_river), WL_sfc) 
+
+ko_river_only_sf = st_set_geometry(data.frame(WLpumping_river = ko_river_intersect$WLpumping_river), st_geometry(ko_river_intersect)) 
+
+# combine the two simple features
+WLpumping_koriver_combined_sf = rbind(WLpumping_only_sf, ko_river_only_sf)
+
+# convert it to a spatialpointdataframe
+WLpumpingriver_combined_spadf = as_Spatial(WLpumping_koriver_combined_sf)
+
+
+
+```
+
+
+```{r}
+# convert to a dataframe
+WLpumpingriver_combined.dataframe <- as.data.frame(WLpumpingriver_combined_spadf)
+#colnames(DEM.dataframe) <- c("DEM","DEMn", "x", "y")
+# select 1 in every 1000 data for variogram modeling 
+set.seed(123)
+# only extract 1 out of 50 data points and use for co-kriging 
+WLpumpingriver_combined.dataframesubset <- subset(WLpumpingriver_combined.dataframe[seq(1,nrow(WLpumpingriver_combined.dataframe), 50),])
+# the subdataframe contains 3966 data points for co-kriging interpolation 
+str(WLpumpingriver_combined.dataframesubset)
+# create a subset DEM spatialpointdataframe for variogram modeling 
+WLpumpingriver_combined.datasubset <- SpatialPointsDataFrame(SpatialPoints(WLpumpingriver_combined.dataframesubset[,2:3]),data=data.frame(WLpumpingriver_combined.dataframesubset[,1]))
+WLpumpingriver_combined.datasubset@bbox <- t(matrix(extent(data.grid),2))
+crs(WLpumpingriver_combined.datasubset) <- crs(DEM.data)
+
+# change the column name 
+colnames(WLpumpingriver_combined.datasubset@data) = "WLpumpingriver"
+# normalize the column values
+WLpumpingriver_combined.datasubset$WLpumpingrivern = normalized(WLpumpingriver_combined.datasubset$WLpumpingriver)
+```
+
+
+## Co-kriging with topography (DEM) 
+```{r}
+plot(v.DEMn <- variogram(DEMn ~ 1, DEM.datasubset, cutoff=300000, width=15000), main = "Empirical Variogram w/ DEMn", pl = T)
+
+# model by eye
+m.DEMn <- vgm(.025, "Gau", 250000, .001)
+# fit
+(m.DEMn.f <- fit.variogram(v.DEMn, m.DEMn))
+
+plot(v.DEMn, pl=T, model=m.DEMn.f, main = "Fitted Topography DEM Variogram")
+```
+# construct he cross-variogram model
+
+```{r}
+(g <- gstat(NULL, id = "WL.PUMPINGRIVER", form = WLpumpingrivern ~ 1, data=WLpumpingriver_combined.datasubset))
+
+(g <- gstat(g, id = "DEM", form = DEMn ~ 1, data=DEM.datasubset))
+
+# Compute and display the two direct variogram and one cross-variogram
+
+v.cross <- variogram(g)
+str(v.cross)
+plot(v.cross, pl=T)
+
+```
+# model the cross-variogram structure
+
+```{r}
+(g <- gstat(g, id = "WL.PUMPINGRIVER", model = m.DEMn.f, fill.all=T))
+# To ensure a positive definite co-krigingg system, use fit.lmc (fit linear model of co-regionalization)
+# This takes the initial estimate, fits all the variograms, and then each of the partial sills is adjusted 
+(g <- fit.lmc(v.cross, g, fit.method=1, correct.diagonal=1.001))
+
+plot(variogram(g), model=g$model)
+
+
+```
+
+# make the co-kriging prediction
+```{r}
+k.cc <- predict(g, data.grid)
+k.cc@data$WL.PUMPINGRIVER <- ifelse(k.cc@data$WL.PUMPINGRIVER.pred >= 1.0, 1, k.cc@data$WL.PUMPINGRIVER.pred)
+k.cc@data$WL.PUMPINGRIVER <- ifelse(k.cc@data$WL.PUMPINGRIVER.pred <= 0.0, 0, k.cc@data$WL.PUMPINGRIVER.pred)
+k.cc@data$WL.PUMPINGRIVER.predn = InvNormalize(k.cc@data$WL.PUMPINGRIVER.pred)
+
+# get the variance to the proper scale
+k.cc@data$WL.PUMPINGRIVER.varn = k.cc@data$WL.PUMPINGRIVER.var * k.cc@data$WL.PUMPINGRIVER.predn
+
+
+sp::spplot(k.cc, "WL2020n.pred", pch=19, col = "transparent",
+     scales=list(draw=TRUE), main="Co-Kirging Estimates with DEM", xlab = "x", ylab = "y", widths = 10)
+```
+
+
 # extract values for each acquifer for cokriging with DEM
+```{r}
+# extract values from spatial polygons
+Yegua_Jackson_df      <- as.data.frame(k.cc[Yegua_Jackson,])
+Sparta_df             <- as.data.frame(k.cc[Sparta,])
+Queen_City_df         <- as.data.frame(k.cc[Queen_City,])
+Carrizo_df           <- as.data.frame(k.cc[Carrizo,])
+Calvert_Bluff_df      <- as.data.frame(k.cc[Calvert_Bluff,])
+Simboro_df        <- as.data.frame(k.cc[Simboro,])
+Hopper_df             <- as.data.frame(k.cc[Hopper,])
+ShallowZone_df        <- as.data.frame(k.cc[ShallowZone,]) 
+
+
+# find one average value for each acquifer
+tol_avg   <- mean(k.cc$WL.PUMPINGRIVER.predn)
+YJ_avg    <- mean(Yegua_Jackson_df$WL.PUMPINGRIVER.predn)
+SPA_avg   <- mean(Sparta_df$WL.PUMPINGRIVER.predn)
+QC_avg    <- mean(Queen_City_df$WL.PUMPINGRIVER.predn)
+CAR_avg   <- mean(Carrizo_df$WL.PUMPINGRIVER.predn)
+CB_avg    <- mean(Calvert_Bluff_df$WL.PUMPINGRIVER.predn)
+SIM_avg   <- mean(Simboro_df$WL.PUMPINGRIVER.predn)
+HOP_avg   <- mean(Hopper_df$WL.PUMPINGRIVER.predn)
+SHAZ_avg  <- mean(ShallowZone_df$WL.PUMPINGRIVER.predn )
+CO_avg <- data.frame(name = c("YJ", "SPA", "QC", "CAR", "CB", "SIM", "HOP", "TOL", "SHAZ"), avg = c(YJ_avg, SPA_avg, QC_avg, CAR_avg, CB_avg, SIM_avg, HOP_avg, tol_avg, SHAZ_avg))
+CO_avg
+
+```
+
+
 # create raster and write on file
-source("write_outputs.R")
+```{r}
+# create raster and store it 
+k.temp <- k.cc[,-(1:5)]
+k.temp
+# ck.raster <- raster(nrows = 10000,ncols =10000)
+# crs(ck.raster) <- CRS("+proj=aea +lat_0=31.25 +lon_0=-100 +lat_1=27.5 +lat_2=35 +x_0=1500000 +y_0=6000000 +datum=NAD83 +units=us-ft +no_defs")
+# extent(ck.raster) <- extent(ko)
+# ck.raster <- rasterize(k.c, ck.raster, field = "WL2020.predN", fun = mean)
+# ck.raster
+#writeRaster(ck.raster, "CKDEM_raster_2020", "GTiff", overwrite = TRUE)
+image_path = "C:/Users/12819/Dropbox/My PC (DESKTOP-9VC04LJ)/Documents/Research/Ground Water/Output Shapefile"
+writeOGR(obj = k.temp, layer = "CK_PUMPINGRIVERTOPO_2020", dsn = image_path, driver = "ESRI Shapefile", overwrite_layer = TRUE)
 
 ```
 
