@@ -253,6 +253,9 @@ h1
 #h3 <- histogram(~ WL2020, data_sp2020, xlab="Measured Water Level (2020)", main = "Measured Water Level", col="green", nint=12)
 #h3
 
+base::save.image('cur.RData')
+
+
 ```
 
 
@@ -261,6 +264,8 @@ h1
 # 2. the vgm method creates a variogram model object
 # 3. the fit.variogram method adjusts a variogram model object to a variogram object
 ```{r}
+
+#base::load('cur.RData')
 v.WLn <- variogram(WL2020n ~ 1 , data=data_sp2020, cutoff=thre_cutoff, width=thre_width)
 plot(v.WLn, main = "Empirical Variogram",pl = T)
 
@@ -330,151 +335,91 @@ ggplot(data = RiverRegression_subset) +
 # add the river elevation on the the prdinary kriging estimates of measured water levels
 ```{r}
 # convert spatial point data frame into simple feature in sf package
-ko_sf = st_as_sf(ko)
+sf_ok_cells = st_as_sf(ko)
 
-ofile = paste("output/", "ko_sf.csv",sep="")
-write.csv(ko_sf, ofile)
+#ofile = paste("output/", "sf_ok_cells.csv",sep="")
+#write.csv(sf_ok_cells, ofile)
 
-D2River_Grid_sf = st_as_sf(D2River_Grid)
-D2River_Grid_sf2 = st_as_sf(D2River_Grid2)
-
-
-ko_sfc = st_as_sfc(ko)
-D2River_Grid_sfc = st_as_sfc(D2River_Grid)
-
-# create a buffer zone, 1000 ft
-ko_sfc_buf = st_buffer(ko_sfc, 1000)
-
-# find the intersection of kriging data frame and river data frame 
-# create a sparse geometry binary predicate, also called sparse matrix, 
-# which is a list with integer vectors only holding the indices for each polygon that intersects. 
-# find x that is in y
-koRiver_sgbp = st_intersects(x = ko_sfc_buf, y= D2River_Grid_sfc)
-Riverko_sgbp = st_intersects(x = D2River_Grid_sfc, y = ko_sfc_buf)
-
-# find the logical vector 
-koRiver_logical = lengths(koRiver_sgbp) > 0
-River_logical   = lengths(Riverko_sgbp) > 0 
-
-# find the intersection
-ko_river_intersect = ko_sf[koRiver_logical,]
-# Save to a csv file
-ofile = paste("output/", "ko_river_intersect.csv",sep="")
-write.csv(ko_river_intersect, ofile)
-
-river_ko_intersect = D2River_Grid_sf[River_logical,]
-river_ko_intersect2 <- D2River_Grid_sf2
-
-#sum(is.na(Surface_WL))
+#D2River_Grid_sf = st_as_sf(D2River_Grid)
+sf_river_cells = st_as_sf(D2River_Grid2)
 
 # create a linear ratio of distance to assign approporiate weights
-LinearDistance_ratio = 1 - river_ko_intersect2$Distance/ max(river_ko_intersect2$Distance)
-#size(LinearDistance_ratio)
-#str(LinearDistance_ratio)
-#class(LinearDistance_ratio)
-
-Surface_WL <- river_ko_intersect2$SmoothWL # from Jevon's shp file above
-#size(Surface_WL)
-
-base::save.image('cur.RData')
-#base::load('cur.RData')
+LinearDistance_ratio = 1 - sf_river_cells$Distance/ max(sf_river_cells$Distance)
 
 
-WL_DIFF_by_DIST <- predict(model1, data.frame(Distance = river_ko_intersect2$Distance))
+
+
+
+#WL_DIFF_by_DIST <- predict(model1, data.frame(Distance = sf_river_cells$Distance))
 #size(WL_DIFF_by_DIST)
 
-OK_pred_WL <- ko_river_intersect$var1.predn
-#size(OK_pred_WL)
-#head(OK_pred_WL)
-
-
-# [] ORG
-#LinearDistance_ratio = 1 - river_ko_intersect2$Distance/ max(river_ko_intersect2$Distance)
-#river_ko_intersect2$LinearDistance_ratio <- LinearDistance_ratio
-
-
-#ko_river_intersect$WLpumping_river = (river_ko_intersect2$SmoothWL +  predict(model1, data.frame(Distance = river_ko_intersect2$Distance))) * (LinearDistance_ratio *0.6) + ko_river_intersect$var1.predn * 0.4
-
-#size((river_ko_intersect2$SmoothWL +  predict(model1, data.frame(Distance = river_ko_intersect2$Distance))) * (LinearDistance_ratio *0.6))
-#size(ko_river_intersect$var1.predn * 0.4)
-
-#head((river_ko_intersect2$SmoothWL +  predict(model1, data.frame(Distance = river_ko_intersect2$Distance))) * (LinearDistance_ratio *0.6))
-#head(ko_river_intersect$var1.predn * 0.4)
-
+#OK_pred_WL <- sf_ok$var1.predn
 
 # [FINAL] calculate the river pred from distance and smooth water level from 
 cof <- 0.8*LinearDistance_ratio
 #LinearDistance_ratio <- 1
 
-# ko_river_intersect$WLpumping_river <- (river_ko_intersect2$SmoothWL +  predict(model1, data.frame(Distance = river_ko_intersect2$Distance))) * cof +  ko_river_intersect$var1.predn*(1-cof)
+# sf_ok$WLpumping_river <- (sf_river_cells$SmoothWL +  predict(model1, data.frame(Distance = sf_river_cells$Distance))) * cof +  sf_ok$var1.predn*(1-cof)
 
-river_ko_intersect2$interpolated_WL_DIFF = predict(model1, data.frame(Distance = river_ko_intersect2$Distance))
+#sf_river_cells$WL_DIFF = predict(model1, data.frame(Distance = sf_river_cells$Distance))
 
-river_ko_intersect2 <- river_ko_intersect2 %>% mutate(GWL_near_river = (SmoothWL + interpolated_WL_DIFF)*cof)
+#sf_river_cells <- sf_river_cells %>% mutate(GWL_near_river = (SmoothWL + WL_DIFF)*cof)
 
+#sf_ok_cells <- sf_ok_cells %>% mutate(OK_pred = var1.predn*(1-cof))
+#plot(sf_ok)
 
-# ko_river_intersect$var1.predn*(1-cof)
+sf_ok_cells <- sf_ok_cells %>% mutate(Xcoor = round(st_coordinates(sf_ok_cells)[,1],0), 
+                                                    Ycoor = round(st_coordinates(sf_ok_cells)[,2],0))
+sf_river_cells <- sf_river_cells %>% mutate(Xcoor = round(x,0), 
+                                                    Ycoor = round(y,0))
 
-ko_river_intersect <- ko_river_intersect %>% mutate(OK_pred = var1.predn*(1-cof))
-#plot(ko_river_intersect)
-
-
-
-# xy <- st_coordinates(ko_river_intersect)
-# head(xy)
-ko_river_intersect <- ko_river_intersect %>% mutate(Xcoor = round(st_coordinates(ko_river_intersect)[,1],0), 
-                                                    Ycoor = round(st_coordinates(ko_river_intersect)[,2],0))
-river_ko_intersect2 <- river_ko_intersect2 %>% mutate(Xcoor = round(st_coordinates(river_ko_intersect2)[,1],0), 
-                                                    Ycoor = round(st_coordinates(river_ko_intersect2)[,2],0))
-
-#ko_spatial = as_Spatial(ko_river_intersect)
-#ko_dataframe = as.data.frame(ko_spatial)
+join_sf <- as.data.frame(as_Spatial(sf_river_cells)) %>% 
+  left_join(as.data.frame(as_Spatial(sf_ok_cells)), by=c("Xcoor", "Ycoor"))
+str(join_sf)
 
 
-#ko_predWL <- as_tibble(as_Spatial(ko_river_intersect))
-ko_predWL <- as.data.frame(as_Spatial(ko_river_intersect))
-str(ko_predWL)
+df_ok_riv <- join_sf %>%
+  dplyr::select(x, y, SmoothWL, Distance, var1.predn)
+str(df_ok_riv)
 
-#river_predWL <- as_tibble(as_Spatial(river_ko_intersect2))
-river_predWL <- as.data.frame(as_Spatial(river_ko_intersect2))
-str(river_predWL)
+df_ok_riv$WL_DIFF = predict(model1, data.frame(Distance = df_ok_riv$Distance))
+df_ok_riv <- df_ok_riv %>% mutate(GWL_near_riv = (SmoothWL + WL_DIFF)*cof)
+df_ok_riv <- df_ok_riv %>% mutate(OK_RIV_pred = GWL_near_riv + var1.predn*(1-cof))
+str(df_ok_riv)
 
-join_df <- ko_predWL %>% 
-  left_join(river_predWL, by=c("Xcoor", "Ycoor"))
-str(join_df)
+#join_df_clean <- join_df %>% 
+#  filter(!is.na(GWL_near_river)) 
 
-join_df_clean <- join_df %>% 
-  filter(!is.na(GWL_near_river)) 
-  
-  
+#ko_predWL <- as_tibble(as_Spatial(sf_ok))
+#ko_predWL <- as.data.frame(as_Spatial(sf_ok_cells))
+#str(ko_predWL)
 
-# Save to a csv file
-ofile = paste("output/", "ko_pred5.csv",sep="")
-write.csv(ko_predWL, ofile)
+#river_predWL <- as_tibble(as_Spatial(sf_river_cells))
+#river_predWL <- as.data.frame(as_Spatial(sf_river_cells))
+#str(river_predWL)
 
-ofile = paste("output/", "river_pred5.csv",sep="")
-write.csv(river_predWL, ofile)
+#join_df <- ko_predWL %>% 
+#  left_join(river_predWL, by=c("Xcoor", "Ycoor"))
+#str(join_df)
 
-
-
-pred <- ggplot(join_df_clean, aes(Xcoor ,Ycoor, z = GWL_near_river)) +
+pred <- ggplot(df_ok_riv, aes(x ,y, z = OK_RIV_pred)) +
   geom_contour_filled(bins = 10) + ggtitle("Adjusted OK water levels based on river stages (ft)")
 pred
 
-
-ko_spatial = as_Spatial(ko_river_intersect)
-ko_dataframe = as.data.frame(ko_spatial)
-pred <- ggplot(ko_dataframe, aes(coords.x1 ,coords.x2, z = var1.predn)) +
+pred <- ggplot(df_ok_riv, aes(x ,y, z = var1.predn)) +
   geom_contour_filled(bins = 10) + ggtitle("OK predicted water level (ft)")
 pred
 
-
-
-
-D2River_dataframe = as.data.frame(D2River_Grid2)
-pred <- ggplot(D2River_dataframe, aes(coords.x1 ,coords.x2, z = SmoothWL)) +
+pred <- ggplot(df_ok_riv, aes(x ,y, z = SmoothWL)) +
   geom_contour_filled(bins = 10) + ggtitle("SmoothWL")
 pred
+
+
+# Save to a csv file
+ofile = paste("output/", "df_ok_riv.csv",sep="")
+write.csv(df_ok_riv, ofile)
+
+
 
 # normalize the column
 #normalized = function (x) {(x-min(x))/(max(x)-min(x))}    
