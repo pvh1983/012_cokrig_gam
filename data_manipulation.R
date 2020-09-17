@@ -159,7 +159,7 @@ DEM.datasubset@bbox <- t(matrix(extent(data.grid),2))
 crs(DEM.datasubset) <- crs(DEM.data)
 DEM.datasubset
 
-plot(DEM.raster)
+#plot(DEM.raster)
 
 # plot the histograms to compare distributions 
 h1 <- histogram(~ DEM, DEM.dataframe, xlab="DEM", col="lightblue",main ="DEM", nint=12)
@@ -173,3 +173,4 @@ breaks = seq(150, 550, 25)
 #h3
 #h4
 
+base::save.image('cur.RData')

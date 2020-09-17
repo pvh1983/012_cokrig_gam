@@ -70,14 +70,14 @@ variogram_model_WL2020n_fit <- fit.variogram(v_WL2020n, variogram_model_WL2020n)
 #summary(variogram_model_WL2020n_fit)
 
 # export fig to png
-ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),".png")
-
+ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),"_GAM_res_",GAM_res,".png", sep="")
 png(ofile,width=10,height=8,units="in",res=300)
-plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted OK Variogram Model ", cal_year,"_cutoff_",toString(thre_cutoff)))
+vplot <- plot(v_WL2020n, pl=T, model=variogram_model_WL2020n_fit, main = paste("Fitted OK Variogram Model ", cal_year,"_cutoff_",toString(thre_cutoff)))
+print(vplot, width = 6, height = 4, dpi = 300)
 dev.off()
 
 # Save to a csv file
-ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),".csv")
+ofile = paste("output/fitted_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),"_GAM_res_",GAM_res,".csv", sep="")
 write.csv(v_WL2020n,ofile)
 
 
@@ -88,18 +88,19 @@ write.csv(v_WL2020n,ofile)
 
 
 # plot the empirical variogram for simulated water levels, change the dataset to model the varigram for a different year
-plot(v.sim_wln <- variogram(sim_wln ~ 1, sim_wl2020.datasubset, cutoff=300000, width=20000), main = "Empirical Variogram",pl = T)
+v.sim_wln <- variogram(sim_wln ~ 1, sim_wl2020.datasubset, cutoff=thre_cutoff, width=thre_width)
+plot(v.sim_wln, main = "Empirical Variogram",pl = T)
 
 # change width from 20,000 to 1,000 to change bin size
 #plot(v.sim_wln <- variogram(sim_wln ~ 1, sim_wl2020.datasubset, cutoff=300000, width=1000), main = "Empirical Variogram",pl = T)
 
-plot(v.sim_wln, pl = T)
+#plot(v.sim_wln, pl = T)
 
 # fit the variogram model
-m.sim_wln <- vgm(.04, "Gau",150000,0.001)
+m.sim_wln <- vgm(.04, "Gau",100000,0.001)
 # examine the fitted variogram model
-(m.sim_wln.f <- fit.variogram(v.sim_wln, m.sim_wln))
-plot(v.sim_wln, pl=T, model=m.sim_wln.f, main = "Variogram MOdeling on GAM")
+m.sim_wln.f <- fit.variogram(v.sim_wln, m.sim_wln)
+#plot(v.sim_wln, pl=T, model=m.sim_wln.f, main = "Variogram MOdeling on GAM")
 
 #head(m.sim_wln)
 
@@ -114,42 +115,55 @@ plot(v.sim_wln, pl=T, model=m.sim_wln.f, main = "Variogram MOdeling on GAM")
 
 # create a model of co-regionalisation, be sure to check the years for both datasets
 # mea wl data_sp2020
-(g <- gstat(NULL, id = "WL", form = WL2020n ~ 1, data=data_sp2020))
-summary(g)
-str(g)
+g <- gstat(NULL, id = "WL", form = WL2020n ~ 1, data=data_sp2020)
+#summary(g)
+#str(g)
 #print(data_spadf)
 #print(sim_wl2020.datasubset)
-print(data_sp2020)
+#print(data_sp2020)
 
 # 
-(g <- gstat(g,  id = "SIM_WL", form = sim_wln ~ 1, data=sim_wl2020.datasubset))
+g <- gstat(g,  id = "SIM_WL", form = sim_wln ~ 1, data=sim_wl2020.datasubset)
 
 # Compute and display the two direct variogram and one cross-variogram
 v.cross <- variogram(g)
-str(v.cross)
-plot(v.cross, pl=T, main = "Cross-Variogram on WL and GAM")
-write.csv(v.cross,'v.cross.csv')
+#str(v.cross)
+#plot(v.cross, pl=T, main = "Cross-Variogram on WL and GAM")
+#write.csv(v.cross,'v.cross.csv')
 
 
 # Fitting a linear model of co-regionalisation
 
-(g <- gstat(g, id = "WL", model = m.sim_wln.f, fill.all=T))
+g <- gstat(g, id = "WL", model = m.sim_wln.f, fill.all=T)
 
 # To ensure a positive definite co-krigingg system, use fit.lmc (fit linear model of co-regionalization)
 # This takes the initial estimate, fits all the variograms, and then each of the partial sills is adjusted
-(g <- fit.lmc(v.cross, g, fit.method=1, correct.diagonal=1.01))
-print(g)
+g <- fit.lmc(v.cross, g, fit.method=1, correct.diagonal=1.01)
+#print(g)
 # examine the model fit for all variogram models
-plot(variogram(g), model=g$model, main = "Cross Variogram Models")
+#plot(variogram(g), model=g$model, main = "Cross Variogram Models")
 
 
+# export fig to png
+ofile = paste("output/crossvariogram_",cal_year,"_cutoff_",toString(thre_cutoff),"_GAM_res_",GAM_res,".png", sep="")
+png(ofile,width=10,height=8,units="in",res=300)
+vplot2 <- plot(variogram(g), pl=T, model=g$model, main = paste("Cross-Variograms on WL and GAM", cal_year,"GAM_res = ", toString(GAM_res)))
+
+print(vplot2, width = 8, height = 8, dpi = 600)
+dev.off()
+
+
+
+# Save to a csv file
+ofile = paste("output/cross_variogram_",cal_year,"_cutoff_",toString(thre_cutoff),"_GAM_res_",GAM_res,".csv", sep="")
+write.csv(v.cross, ofile)
 
 
 # Perform co-kriging with simulated water levels
 
 # use the predict function from gstat to interpolate the co-kriging estimates
 coK_sim <- predict(g, data.grid)
-coK_sim
+#coK_sim
 
 # constrain the predicted values strictly between 0 and 1
 coK_sim@data$SIM_WL.pred <- ifelse(coK_sim@data$SIM_WL.pred >= 1.0, 1, coK_sim@data$SIM_WL.pred)

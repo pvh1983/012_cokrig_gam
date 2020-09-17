@@ -37,6 +37,9 @@ DEM <- raster("input/GIS/rasters/DEM_ShallowArea_Resample500.tif") # hpham: This
 D2River_Grid = readOGR(dsn = path_river, 
 layer = "GridCells_500_within_6000_ft_Smooth_Perennial_Streams_wNearestSmoothStreamPt")
 
+#sp::spplot(D2River_Grid, "SmoothWL", pch=19, col = "transparent",
+#           scales=list(draw=TRUE), main="SmoothWL")
+
 # import the pumping raster (difference in water level after pumping )
 #pumping500_2018 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2018.500ft.pst15.tif")
 #pumping500_2019 <- raster("input/GIS/rasters/500ft_res/Pumping.Drawdown/Shallow.Combined.DrawDown.1929.2019.500ft.pst15.tif")
@@ -58,7 +61,7 @@ layer = "GridCells_500_within_6000_ft_Smooth_Perennial_Streams_wNearestSmoothStr
 #sim_WL2019 <- raster("input/GIS/rasters/500ft_res/Hds.Surfaces.Rasters.500ft.pst15/Shallow.Combined.Hds.2019.500ft.pst15.tif")
 
 sim_WL2020 <- raster(ifile_GAM_WL)
-plot(sim_WL2020)
+#plot(sim_WL2020)
 #plot(sim_WL2019)
 
 # import pumping drawdown information 

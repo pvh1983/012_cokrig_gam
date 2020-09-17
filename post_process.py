@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Notes: Choose a "year" for raster WL file
+# cd C:/Users/hpham/OneDrive - INTERA Inc/projects/012_rscript_geostats_s/scripts
 
 
 def label_point_orig(x, y, val, ax):
@@ -14,20 +15,22 @@ def label_point_orig(x, y, val, ax):
 if __name__ == "__main__":
 
     # Read Ross's WL csv file, choose some cols, and get DIFF
+    # This generates the input for the R scripts
     opt_pre_process_data = True
 
     opt_gen_variograms = True
     opt_gen_variograms_aio = True
 
-    year = 2020  # year of GAM ras WL
-    Mea_WL = 'WL2020'
+    year = 2019  # year of GAM ras WL
+    Mea_WL = 'WL2019'
     aquifer_type = 'Shallow.Below'
-    list_ras_res = [500, 4000, 8000, 16000, 32000, 64000]
+    list_ras_res = [500, 4000, 8000, 16000, 32000, 64000, 128000]
     method = 'OK_Water_Levels'
 
     # [1] Read dataframe and filter out nan cells
     if opt_pre_process_data:
         ifile = 'input/data/water_levels/Shallow.Wells.GMA12.YJ.hds.Smooth.csv'
+        print(f'Reading {ifile}\n')
         df0 = pd.read_csv(ifile)
         c1 = ['Longitude', 'Latitude', Mea_WL]
         c2 = [
@@ -69,7 +72,7 @@ if __name__ == "__main__":
             # ax.set_ylim(ylim)
 
         #
-        ofile_png = f'output/residual_{year}_2020.png'
+        ofile_png = f'output/residual_{year}_{Mea_WL}.png'
         fig.savefig(ofile_png, dpi=300, transparent=False,
                     bbox_inches='tight')
         print(f'The figure was saved at: {ofile_png}')
@@ -104,10 +107,10 @@ if __name__ == "__main__":
 
         # title_out_stats = f'{sce}/{var} Peak Values by Zone'
         # ax.set_title(title_out_stats, fontsize=12)
-        ofile = f'output/variogram_{year}.png'
+        ofile = f'output/variogram_{year}_{Mea_WL}.png'
         fig.savefig(ofile, dpi=300, transparent=False,
                     bbox_inches='tight')
-
+        print(f'Saved a figure at {ofile}\n')
         # plt.show()
 
     if opt_gen_variograms_aio:
@@ -123,6 +126,7 @@ if __name__ == "__main__":
         for i, ras_res in enumerate(list_ras_res):
             #    ras_res = list_ras_res[i]
             ifile2 = f'output/{method}_fitted_variogram_{Mea_WL}.minus.{aquifer_type}.{year}.{ras_res}.csv'
+            print(f'Reading {ifile2} \n')
             df = pd.read_csv(ifile2)
             df.head()
 
@@ -136,10 +140,10 @@ if __name__ == "__main__":
 
         # title_out_stats = f'{sce}/{var} Peak Values by Zone'
         # ax.set_title(title_out_stats, fontsize=12)
-        ofile = f'output/variogram_{year}_aio.png'
+        ofile = f'output/variogram_{year}_{Mea_WL}_aio.png'
         fig.savefig(ofile, dpi=300, transparent=False,
                     bbox_inches='tight')
-
+        print(f'Saved a figure at {ofile}\n')
         # plt.show()
 
 # ref
